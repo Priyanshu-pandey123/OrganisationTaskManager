@@ -47,10 +47,10 @@ const Register = ({ onToggleForm }) => {
     dispatch(registerStart());
     
     try {
-      // Call the signup API
+      // Call the signup API with the correct payload structure
       const result = await signup({
-        name: formData.fullName,
         username: formData.username,
+        full_name: formData.fullName,
         email: formData.email,
         password: formData.password,
       }).unwrap();
@@ -60,7 +60,7 @@ const Register = ({ onToggleForm }) => {
         user: {
           id: result.user?.id || result.id,
           email: result.user?.email || result.email,
-          name: result.user?.name || result.name || formData.fullName,
+          name: result.user?.name || result.full_name || formData.fullName,
         },
         token: result.token || result.access_token,
       }));
