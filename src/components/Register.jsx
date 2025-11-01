@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useSignupMutation } from '../store/apiSlice';
+import { registerStart, registerSuccess, registerFailure, clearError } from '../store/slices/authSlice';
+import { toggleTheme } from '../store/slices/themeSlice';
 
 const Register = ({ onToggleForm }) => {
   const [formData, setFormData] = useState({
@@ -8,21 +13,19 @@ const Register = ({ onToggleForm }) => {
     password: '',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { isLoading, error } = useAppSelector(state => state.auth);
+  const { isDarkMode } = useAppSelector(state => state.theme);
+  const [signup] = useSignupMutation();
 
-  // Sync theme with localStorage and document body
+  // Sync theme with document body
   useEffect(() => {
     const root = document.documentElement;
     if (isDarkMode) {
       root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
     } else {
       root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -34,18 +37,46 @@ const Register = ({ onToggleForm }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Clear any previous errors
+    dispatch(clearError());
+    
+    // Start registration
+    dispatch(registerStart());
+    
+    try {
+      // Call the signup API
+      const result = await signup({
+        name: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      }).unwrap();
+      
+      // Registration successful - update Redux state
+      dispatch(registerSuccess({
+        user: {
+          id: result.user?.id || result.id,
+          email: result.user?.email || result.email,
+          name: result.user?.name || result.name || formData.fullName,
+        },
+        token: result.token || result.access_token,
+      }));
+      
+      // Navigate to task manager or dashboard
+      navigate('/taskManager');
+      
+    } catch (error) {
+      // Registration failed - update Redux state with error
+      const errorMessage = error?.data?.message || error?.message || 'Registration failed. Please try again.';
+      dispatch(registerFailure(errorMessage));
+    }
+  };
 
-    // --- Placeholder for API call / Registration Logic ---
-    console.log('Registration Data:', formData);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Registration successful! (Placeholder)');
-      // In a real app, you would redirect the user here
-    }, 1500);
+  const handleThemeToggle = () => {
+    dispatch(toggleTheme());
   };
 
   return (
@@ -56,12 +87,13 @@ const Register = ({ onToggleForm }) => {
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
               Create Your Account
             </h2>
-            {/* <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition duration-200 text-sm"
+            {/* Update the theme toggle button to use Redux */}
+            <button
+              onClick={handleThemeToggle}
+              className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
-              {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-            </button> */}
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
           </div>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
             Start your journey with us today.
@@ -158,8 +190,16 @@ const Register = ({ onToggleForm }) => {
               </div>
             </div>
 
+            {/* Display error message from Redux state */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-md">
+                {error}
+              </div>
+            )}
+
             {/* Submit Button */}
             <div>
+              {/* Update the submit button to show loading state from Redux */}
               <button
                 type="submit"
                 disabled={isLoading}
