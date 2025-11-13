@@ -51,10 +51,12 @@ const Register = ({ onToggleForm }) => {
       const result = await signup({
         username: formData.username,
         full_name: formData.fullName,
-        email: formData.email,
+        email: formData.email, 
         password: formData.password,
       }).unwrap();
       
+
+
       // Registration successful - update Redux state
       dispatch(registerSuccess({
         user: {
@@ -65,7 +67,10 @@ const Register = ({ onToggleForm }) => {
         token: result.token || result.access_token,
       }));
       
-      // Navigate to task manager or dashboard
+
+
+
+    
       navigate('/taskManager');
       
     } catch (error) {

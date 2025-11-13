@@ -10,16 +10,15 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-gray-900">
-        <Header />
+        {/* <Header /> */}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/taskManager" element={<TaskManager />} />
         </Routes>
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </Router>
   );
 }
 
 export default App;
-

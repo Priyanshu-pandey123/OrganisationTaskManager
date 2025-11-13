@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="flex items-center space-x-2 mb-4">
               <Layers className="w-8 h-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">
-                Mishra IT
+                Organisation Task Manager
               </span>
             </div>
             <p className="text-gray-600 text-sm">

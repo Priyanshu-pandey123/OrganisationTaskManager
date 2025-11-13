@@ -10,7 +10,7 @@ const Home = () => {
     };
 
     return (
-        <div className='mt-20'>
+        <div className=''>
             <div className="max-w-6xl mx-auto">
                 {/* Conditional Rendering */}
                 {isLogin ? (
