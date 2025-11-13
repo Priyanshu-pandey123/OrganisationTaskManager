@@ -19,7 +19,7 @@ export const apiSlice = createApi({
     // Authentication endpoints
     login: builder.mutation({
       query: (credentials) => ({
-        url: '/auth/login',
+        url: '/v1/auth/login',
         method: 'POST',
         body: credentials,
       }),

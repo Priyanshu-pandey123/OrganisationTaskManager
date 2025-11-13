@@ -351,7 +351,7 @@ const TaskManager = () => {
   const filteredEmployees = currentCompany?.employees || [];
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300 mt-20">
+    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300">
       <div className="max-w-6xl mx-auto rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-gray-800 shadow-lg">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">

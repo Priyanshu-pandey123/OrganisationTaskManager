@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLoginMutation } from '../store/apiSlice';
+import { useAppDispatch } from '../store/hooks';
+import { loginSuccess, loginFailure } from '../store/slices/authSlice';
 
 const Login = ({ onToggleForm }) => {
   const [formData, setFormData] = useState({
@@ -7,9 +10,9 @@ const Login = ({ onToggleForm }) => {
     password: '',
   });
 
- const navigate = useNavigate()
-
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [login, { isLoading }] = useLoginMutation();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -35,25 +38,28 @@ const Login = ({ onToggleForm }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
 
+    try {
+      const result = await login({
+        email: formData.email,
+        password: formData.password,
+      }).unwrap();
 
+      // If login successful (status 200), dispatch success and navigate
+      dispatch(loginSuccess({
+        user: result.user,
+        token: result.token,
+      }));
 
-    // --- Placeholder for API call / Login Logic ---
-    console.log('Login Data:', formData);
-    navigate("/taskManager")
-
-    setTimeout(() => {
-      setIsLoading(false);
-      if (formData.email === 'saurav@swiftramp.in' && formData.password === 'saurav@123') {
-          alert('Login successful! (Placeholder)');
-      } else {
-          alert('Invalid credentials. (Placeholder)');
-      }
-      // In a real app, you would handle successful login or show an error
-    }, 1500);
+      navigate("/taskManager");
+    } catch (error) {
+      // Handle login failure
+      const errorMessage = error?.data?.message || 'Login failed. Please try again.';
+      dispatch(loginFailure(errorMessage));
+      alert(errorMessage);
+    }
   };
 
   return (
