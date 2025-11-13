@@ -54,25 +54,37 @@ const Register = ({ onToggleForm }) => {
         email: formData.email, 
         password: formData.password,
       }).unwrap();
-      
 
+      // Check if user is verified
+      if (result.data?.is_verified === false) {
+        // User registered but not verified - show verification modal and switch to login
+        dispatch(registerSuccess({
+          user: {
+            id: result.data.user_id,
+            email: result.data.email,
+            name: result.data.full_name,
+            is_verified: false,
+            verification_token: result.data.verification_token,
+          },
+          token: result.token || '',
+          is_verified: false,
+          verification_token: result.data.verification_token,
+        }));
+        
+        // Toggle to login page
+        onToggleForm();
+      } else {
+        // User is verified - proceed with normal success flow
+        dispatch(registerSuccess({
+          user: {
+            id: result.data?.user_id || result.id,
+            email: result.data?.email || result.email,
+            name: result.data?.full_name || result.full_name || formData.fullName,
+          },
+          token: result.token || result.access_token,
+        }));
+      }
 
-      // Registration successful - update Redux state
-      dispatch(registerSuccess({
-        user: {
-          id: result.user?.id || result.id,
-          email: result.user?.email || result.email,
-          name: result.user?.name || result.full_name || formData.fullName,
-        },
-        token: result.token || result.access_token,
-      }));
-      
-
-
-
-    
-      navigate('/taskManager');
-      
     } catch (error) {
       // Registration failed - update Redux state with error
       const errorMessage = error?.data?.message || error?.message || 'Registration failed. Please try again.';
@@ -92,13 +104,7 @@ const Register = ({ onToggleForm }) => {
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
               Create Your Account
             </h2>
-            {/* Update the theme toggle button to use Redux */}
-            <button
-              onClick={handleThemeToggle}
-              className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
+          
           </div>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
             Start your journey with us today.

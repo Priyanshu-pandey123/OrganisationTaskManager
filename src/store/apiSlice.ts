@@ -32,6 +32,9 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    verifyEmail: builder.query({
+      query: (token) => `/v1/auth/verify/${token}`,
+    }),
     
     // Task management endpoints
     getTasks: builder.query({
@@ -75,10 +78,10 @@ export const apiSlice = createApi({
     }),
   }),
 });
-
 export const {
   useLoginMutation,
   useSignupMutation,
+  useVerifyEmailQuery,
   useGetTasksQuery,
   useCreateTaskMutation,
   useUpdateTaskMutation,

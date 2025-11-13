@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useLoginMutation } from '../store/apiSlice';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess, loginFailure } from '../store/slices/authSlice';
@@ -53,12 +54,14 @@ const Login = ({ onToggleForm }) => {
         token: result.token,
       }));
 
+      toast.success('Login successful! Welcome back.');
       navigate("/taskManager");
     } catch (error) {
       // Handle login failure
+
       const errorMessage = error?.data?.message || 'Login failed. Please try again.';
       dispatch(loginFailure(errorMessage));
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -70,12 +73,7 @@ const Login = ({ onToggleForm }) => {
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
               Sign in to your account
             </h2>
-            {/* <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition duration-200 text-sm"
-            >
-              {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-            </button> */}
+          
           </div>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
             Welcome back!
