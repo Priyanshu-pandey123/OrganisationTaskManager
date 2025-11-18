@@ -7,30 +7,33 @@ const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
   console.log('API Response:', companiesData, 'Transformed data:', companiesData?.data);
   // State management - using local state instead of Firebase
-  const [companies, setCompanies] = useState([]);
-  const [currentCompany, setCurrentCompany] = useState(null);
-  const [newCompanyName, setNewCompanyName] = useState('');
-  const [invitedEmail, setInvitedEmail] = useState('');
-  const [tasks, setTasks] = useState([]);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTeamName, setNewTeamName] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [employeeFilter, setEmployeeFilter] = useState('');
-  const [userId, setUserId] = useState('user-' + Date.now());
-  const [showCompletedOnly, setShowCompletedOnly] = useState(false);
-  const [expandedTasks, setExpandedTasks] = useState({});
-  const [subtaskInput, setSubtaskInput] = useState({});
-  const [expandedSubtasks, setExpandedSubtasks] = useState({});
-  const [subtaskReplyInput, setSubtaskReplyInput] = useState({});
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-  const [isEditingCompanyName, setIsEditingCompanyName] = useState(false);
-  const [editingCompanyName, setEditingCompanyName] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+   // State management - using local state instead of Firebase
+   const [companies, setCompanies] = useState([]);
+   const [currentCompany, setCurrentCompany] = useState(null);
+   const [newCompanyName, setNewCompanyName] = useState('');
+   const [invitedEmail, setInvitedEmail] = useState('');
+   const [tasks, setTasks] = useState([]);
+   const [newTaskTitle, setNewTaskTitle] = useState('');
+   const [newTeamName, setNewTeamName] = useState('');
+   const [selectedTeam, setSelectedTeam] = useState('');
+   const [selectedTeamForMember, setSelectedTeamForMember] = useState('');
+   const [selectedEmployee, setSelectedEmployee] = useState('');
+   const [employeeFilter, setEmployeeFilter] = useState('');
+   const [userId, setUserId] = useState('user-' + Date.now());
+   const [showCompletedOnly, setShowCompletedOnly] = useState(false);
+   const [expandedTasks, setExpandedTasks] = useState({});
+   const [subtaskInput, setSubtaskInput] = useState({});
+   const [expandedSubtasks, setExpandedSubtasks] = useState({});
+   const [subtaskReplyInput, setSubtaskReplyInput] = useState({});
+   const [isDarkMode, setIsDarkMode] = useState(() => {
+     const savedTheme = localStorage.getItem('theme');
+     return savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+   });
+   const [isEditingCompanyName, setIsEditingCompanyName] = useState(false);
+   const [editingCompanyName, setEditingCompanyName] = useState('');
+   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Update companies state when API data changes
   // Update companies state when API data changes
   useEffect(() => {
     if (companiesData?.data) {
@@ -38,8 +41,8 @@ const TaskManager = () => {
       const transformedCompanies = companiesData.data.map(org => ({
         id: org.org_id,
         name: org.org_name,
-        teams: ['Default Team'], // Add default team since API doesn't provide this
-        employees: [], // Add empty employees array since API doesn't provide this
+        teams: [], // Initialize as empty array for teams with members
+        employees: [], // Keep for backward compatibility
         created_at: org.created_at,
         updated_at: org.updated_at
       }));
@@ -49,7 +52,7 @@ const TaskManager = () => {
       if (!currentCompany && transformedCompanies.length > 0) {
         const firstCompany = transformedCompanies[0];
         setCurrentCompany(firstCompany);
-        setSelectedTeam(firstCompany.teams[0] || '');
+        setSelectedTeam(firstCompany.teams.length > 0 ? firstCompany.teams[0].name : '');
         setSelectedEmployee(firstCompany.employees[0]?.id || '');
       }
     }
@@ -171,33 +174,76 @@ const TaskManager = () => {
     setShowDeleteModal(false);
   };
 
-  const handleAddTeam = () => {
+  const handleCreateTeam = () => {
     if (!currentCompany || !newTeamName.trim()) return;
+    
+    // Check if team already exists
+    const existingTeam = currentCompany.teams.find(team => team.name === newTeamName.trim());
+    if (existingTeam) {
+      alert('Team already exists!');
+      return;
+    }
+    
+    const newTeam = {
+      name: newTeamName.trim(),
+      members: [],
+      createdAt: Date.now()
+    };
+    
     const updatedCompany = {
       ...currentCompany,
-      teams: [...currentCompany.teams, newTeamName]
+      teams: [...currentCompany.teams, newTeam]
     };
+    
     const updatedCompanies = companies.map(c => 
       c.id === currentCompany.id ? updatedCompany : c
     );
+    
     setCompanies(updatedCompanies);
     setCurrentCompany(updatedCompany);
     setNewTeamName('');
   };
 
-  const handleInviteEmployee = () => {
-    if (!currentCompany || !invitedEmail.trim()) return;
+  const handleAddMemberToTeam = () => {
+    if (!currentCompany || !selectedTeamForMember || !invitedEmail.trim()) return;
+    
+    const updatedTeams = currentCompany.teams.map(team => {
+      if (team.name === selectedTeamForMember) {
+        // Check if member already exists
+        const existingMember = team.members.find(member => member.email === invitedEmail.trim());
+        if (existingMember) {
+          alert('Member already exists in this team!');
+          return team;
+        }
+        
+        return {
+          ...team,
+          members: [...team.members, {
+            email: invitedEmail.trim(),
+            status: 'Invited',
+            invitedAt: Date.now()
+          }]
+        };
+      }
+      return team;
+    });
+    
     const updatedCompany = {
       ...currentCompany,
-      pendingInvites: [...(currentCompany.pendingInvites || []), invitedEmail]
+      teams: updatedTeams
     };
+    
     const updatedCompanies = companies.map(c => 
       c.id === currentCompany.id ? updatedCompany : c
     );
+    
     setCompanies(updatedCompanies);
     setCurrentCompany(updatedCompany);
     setInvitedEmail('');
+    setSelectedTeamForMember('');
   };
+
+  // Remove the old handleInviteEmployee function as it's replaced by handleAddMemberToTeam
 
   const handleAddTask = () => {
     if (!currentCompany || !newTaskTitle.trim() || !selectedTeam || !selectedEmployee) return;
@@ -355,23 +401,16 @@ const TaskManager = () => {
     return matchesCompletedFilter && matchesEmployeeFilter;
   }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-  const filteredTeams = currentCompany?.teams || [];
+  const filteredTeams = currentCompany?.teams.map(team => team.name) || [];
   const filteredEmployees = currentCompany?.employees || [];
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
-      <div className="max-w-6xl mx-auto rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-gray-800 shadow-lg">
+      <div className="max-w-7xl mx-auto rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-gray-800 shadow-lg">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-0">Collaborative Task Manager</h1>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition duration-200 text-sm sm:text-base"
-            >
-              {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-            </button>
-          </div>
+         
         </div>
         <hr className="border-gray-300 dark:border-gray-700 mb-4" />
 
@@ -432,8 +471,8 @@ const TaskManager = () => {
           </div>
         </div>
 
-        {/* Manage Company Section */}
-        {currentCompany && (
+             {/* Manage Company Section */}
+             {currentCompany && (
           <div className="mb-4 p-4 bg-gray-200 dark:bg-gray-700 rounded-lg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
               <h2 className="text-xl font-bold">Manage Company</h2>
@@ -448,7 +487,7 @@ const TaskManager = () => {
                     />
                     <button onClick={handleEditCompanyName} className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200" title="Save changes">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </button>
                     <button onClick={() => setIsEditingCompanyName(false)} className="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200" title="Cancel editing">
@@ -486,38 +525,93 @@ const TaskManager = () => {
                 )}
               </div>
             </div>
-            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
+            
+            {/* Create New Team Section */}
+            <div className="mt-4 p-3 bg-gray-300 dark:bg-gray-600 rounded-lg mb-4 w-[500px]">
+              <h3 className="text-lg font-semibold mb-3">Create New Team</h3>
+              <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="New team name"
-                  className="w-full px-3 py-2 text-base bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  placeholder="Enter team name"
+                  className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                 />
                 <button
-                  onClick={handleAddTeam}
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition duration-200 flex items-center justify-center whitespace-nowrap"
+                  onClick={handleCreateTeam}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition duration-200"
                 >
-                  Add Team
-                </button>
-              </div>
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <input
-                  type="email"
-                  value={invitedEmail}
-                  onChange={(e) => setInvitedEmail(e.target.value)}
-                  placeholder="Invite employee email"
-                  className="w-full px-3 py-2 text-base bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                />
-                <button
-                  onClick={handleInviteEmployee}
-                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition duration-200 flex items-center justify-center whitespace-nowrap"
-                >
-                  Invite
+                  Create Team
                 </button>
               </div>
             </div>
+
+            {/* Add Member to Team Section */}
+            {currentCompany.teams && currentCompany.teams.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-300 dark:bg-gray-600 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Add Member to Team</h3>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <label className="text-sm font-medium">Select Team:</label>
+                    <select
+                      value={selectedTeamForMember}
+                      onChange={(e) => setSelectedTeamForMember(e.target.value)}
+                      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
+                    >
+                      <option value="">Select Team</option>
+                      {currentCompany.teams.map((team, index) => (
+                        <option key={index} value={team.name}>{team.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <input
+                      type="email"
+                      value={invitedEmail}
+                      onChange={(e) => setInvitedEmail(e.target.value)}
+                      placeholder="Member email"
+                      className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    />
+                    <button
+                      onClick={handleAddMemberToTeam}
+                      disabled={!selectedTeamForMember}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200"
+                    >
+                      Add Member
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Display Teams and Members */}
+                <div className="mt-4 space-y-3">
+                  <h4 className="text-md font-semibold">Teams & Members:</h4>
+                  {currentCompany.teams.map((team, teamIndex) => (
+                    <div key={teamIndex} className="bg-gray-200 dark:bg-gray-700 p-3 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <h5 className="font-medium">{team.name}</h5>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {team.members ? team.members.length : 0} members
+                        </span>
+                      </div>
+                      {team.members && team.members.length > 0 ? (
+                        <div className="space-y-1">
+                          {team.members.map((member, memberIndex) => (
+                            <div key={memberIndex} className="flex justify-between items-center text-sm bg-gray-300 dark:bg-gray-600 p-2 rounded">
+                              <span>{member.email}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Status: {member.status || 'Invited'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No members yet</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         

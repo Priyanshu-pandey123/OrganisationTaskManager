@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { supabase } from '../lib/supabase'; // You'll need to create this
+ // You'll need to create this
 
 const baseQuery = fetchBaseQuery({
   baseUrl: 'https://9q38lq2b-5030.inc1.devtunnels.ms', // Your API base URL
