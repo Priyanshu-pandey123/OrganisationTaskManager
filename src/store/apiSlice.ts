@@ -40,6 +40,13 @@ export const apiSlice = createApi({
     getTasks: builder.query({
       query: () => '/tasks',
     }),
+
+    getTeamsByOrganisationId: builder.query({
+      query: (organisationId) => ({
+        url: `team/getteam/${organisationId}`,
+        method: "GET",
+      }),
+    }),
     
     createTask: builder.mutation({
       query: (task) => ({
@@ -75,6 +82,13 @@ export const apiSlice = createApi({
         body: company,
       }),
     }),
+    createTeam: builder.mutation({
+      query: (team) => ({
+        url: '/team/creatteam',
+        method: 'POST',
+        body: team,
+      }),
+    }),
   }),
 });
 export const {
@@ -87,4 +101,6 @@ export const {
   useDeleteTaskMutation,
   useGetCompaniesQuery,
   useCreateCompanyMutation,
+  useCreateTeamMutation,
+  useGetTeamsByOrganisationIdQuery
 } = apiSlice;
