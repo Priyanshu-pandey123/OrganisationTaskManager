@@ -16,7 +16,7 @@ const baseQuery = fetchBaseQuery({
 export const apiSlice = createApi({
   baseQuery,
   endpoints: (builder) => ({
-    // Authentication endpoints
+
     login: builder.mutation({
       query: (credentials) => ({
         url: '/v1/auth/login',
@@ -32,11 +32,11 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+   
     verifyEmail: builder.query({
       query: (token) => `/v1/auth/verify/${token}`,
     }),
     
-    // Task management endpoints
     getTasks: builder.query({
       query: () => '/tasks',
     }),
@@ -64,9 +64,8 @@ export const apiSlice = createApi({
       }),
     }),
     
-    // Company endpoints
     getCompanies: builder.query({
-      query: () => '/companies',
+      query: () => '/v1/org/getall',
     }),
     
     createCompany: builder.mutation({

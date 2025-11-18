@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import {  useGetCompaniesQuery} from '../store/apiSlice'
+import { data } from 'autoprefixer';
 
 const TaskManager = () => {
+  // Fetch companies from API
+  const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
+  console.log('API Response:', companiesData, 'Transformed data:', companiesData?.data);
   // State management - using local state instead of Firebase
   const [companies, setCompanies] = useState([]);
   const [currentCompany, setCurrentCompany] = useState(null);
@@ -12,7 +17,7 @@ const TaskManager = () => {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
-  const [userId, setUserId] = useState('user-' + Date.now()); 
+  const [userId, setUserId] = useState('user-' + Date.now());
   const [showCompletedOnly, setShowCompletedOnly] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState({});
   const [subtaskInput, setSubtaskInput] = useState({});
@@ -26,23 +31,40 @@ const TaskManager = () => {
   const [editingCompanyName, setEditingCompanyName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Load data from localStorage on component mount
+  // Update companies state when API data changes
   useEffect(() => {
-    const savedCompanies = localStorage.getItem('taskManager_companies');
+    if (companiesData?.data) {
+      // Transform API response to match component expectations
+      const transformedCompanies = companiesData.data.map(org => ({
+        id: org.org_id,
+        name: org.org_name,
+        teams: ['Default Team'], // Add default team since API doesn't provide this
+        employees: [], // Add empty employees array since API doesn't provide this
+        created_at: org.created_at,
+        updated_at: org.updated_at
+      }));
+      setCompanies(transformedCompanies);
+      
+      // If no current company is selected and we have companies, select the first one
+      if (!currentCompany && transformedCompanies.length > 0) {
+        const firstCompany = transformedCompanies[0];
+        setCurrentCompany(firstCompany);
+        setSelectedTeam(firstCompany.teams[0] || '');
+        setSelectedEmployee(firstCompany.employees[0]?.id || '');
+      }
+    }
+  }, [companiesData, currentCompany]);
+  // Load tasks and current company from localStorage on component mount
+  useEffect(() => {
     const savedTasks = localStorage.getItem('taskManager_tasks');
     const savedCurrentCompany = localStorage.getItem('taskManager_currentCompany');
-    
-    if (savedCompanies) {
-      const parsedCompanies = JSON.parse(savedCompanies);
-      setCompanies(parsedCompanies);
-    }
-    
+
     if (savedTasks) {
       const parsedTasks = JSON.parse(savedTasks);
       setTasks(parsedTasks);
     }
-    
-    if (savedCurrentCompany) {
+
+    if (savedCurrentCompany && !currentCompany) {
       const parsedCurrentCompany = JSON.parse(savedCurrentCompany);
       setCurrentCompany(parsedCurrentCompany);
       setSelectedTeam(parsedCurrentCompany.teams[0] || '');
@@ -50,22 +72,8 @@ const TaskManager = () => {
     }
   }, []);
 
-  // Save data to localStorage whenever state changes
-  useEffect(() => {
-    localStorage.setItem('taskManager_companies', JSON.stringify(companies));
-  }, [companies]);
 
-  useEffect(() => {
-    localStorage.setItem('taskManager_tasks', JSON.stringify(tasks));
-  }, [tasks]);
 
-  useEffect(() => {
-    if (currentCompany) {
-      localStorage.setItem('taskManager_currentCompany', JSON.stringify(currentCompany));
-    } else {
-      localStorage.removeItem('taskManager_currentCompany');
-    }
-  }, [currentCompany]);
 
   // Sync theme with localStorage and document body
   useEffect(() => {
@@ -385,19 +393,29 @@ const TaskManager = () => {
         <div className="mb-4">
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
             <h2 className="text-base font-bold">My Companies</h2>
-            <select
-              value={currentCompany ? currentCompany.id : ''}
-              onChange={(e) => {
-                const selectedCompany = companies.find(c => c.id === e.target.value);
-                handleSelectCompany(selectedCompany);
-              }}
-              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            >
-              <option value="">Select a company</option>
-              {companies.map(company => (
-                <option key={company.id} value={company.id}>{company.name}</option>
-              ))}
-            </select>
+            {companiesLoading ? (
+              <div className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-500 rounded-lg">
+                Loading companies...
+              </div>
+            ) : companiesError ? (
+              <div className="px-3 py-2 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-lg">
+                Error loading companies
+              </div>
+            ) : (
+              <select
+                value={currentCompany ? currentCompany.id : ''}
+                onChange={(e) => {
+                  const selectedCompany = companies.find(c => c.id === e.target.value);
+                  handleSelectCompany(selectedCompany);
+                }}
+                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              >
+                <option value="">Select a company</option>
+                {companies.map(company => (
+                  <option key={company.id} value={company.id}>{company.name}</option>
+                ))}
+              </select>
+            )}
             <input
               type="text"
               value={newCompanyName}
