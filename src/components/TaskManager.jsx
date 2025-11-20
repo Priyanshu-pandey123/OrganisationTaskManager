@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {  useGetCompaniesQuery} from '../store/apiSlice'
+import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery } from '../store/apiSlice'
 import { data } from 'autoprefixer';
-
 const TaskManager = () => {
-  // Fetch companies from API
   const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
-  console.log('API Response:', companiesData, 'Transformed data:', companiesData?.data);
-  // State management - using local state instead of Firebase
-   // State management - using local state instead of Firebase
    const [companies, setCompanies] = useState([]);
    const [currentCompany, setCurrentCompany] = useState(null);
    const [newCompanyName, setNewCompanyName] = useState('');
@@ -32,32 +27,35 @@ const TaskManager = () => {
    const [isEditingCompanyName, setIsEditingCompanyName] = useState(false);
    const [editingCompanyName, setEditingCompanyName] = useState('');
    const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [createTeam, { isLoading: creatingTeam, error: createTeamError }] = useCreateTeamMutation();
+  const { 
+    data: teamsData, 
+    isLoading: teamsLoading, 
+    error: teamsError, 
+    refetch: refetchTeams 
+  } = useGetTeamsByOrganisationIdQuery(currentCompany?.id, {
+    skip: !currentCompany?.id 
+  });
 
-  // Update companies state when API data changes
-  // Update companies state when API data changes
+
   useEffect(() => {
     if (companiesData?.data) {
-      // Transform API response to match component expectations
       const transformedCompanies = companiesData.data.map(org => ({
         id: org.org_id,
         name: org.org_name,
-        teams: [], // Initialize as empty array for teams with members
-        employees: [], // Keep for backward compatibility
+        teams: [], // Teams will come from API now
+        employees: [], 
         created_at: org.created_at,
         updated_at: org.updated_at
       }));
       setCompanies(transformedCompanies);
       
-      // If no current company is selected and we have companies, select the first one
       if (!currentCompany && transformedCompanies.length > 0) {
         const firstCompany = transformedCompanies[0];
         setCurrentCompany(firstCompany);
-        setSelectedTeam(firstCompany.teams.length > 0 ? firstCompany.teams[0].name : '');
-        setSelectedEmployee(firstCompany.employees[0]?.id || '');
       }
     }
   }, [companiesData, currentCompany]);
-  // Load tasks and current company from localStorage on component mount
   useEffect(() => {
     const savedTasks = localStorage.getItem('taskManager_tasks');
     const savedCurrentCompany = localStorage.getItem('taskManager_currentCompany');
@@ -174,34 +172,27 @@ const TaskManager = () => {
     setShowDeleteModal(false);
   };
 
-  const handleCreateTeam = () => {
+  // Update the handleCreateTeam function to use the API
+  const handleCreateTeam = async () => {
     if (!currentCompany || !newTeamName.trim()) return;
     
-    // Check if team already exists
-    const existingTeam = currentCompany.teams.find(team => team.name === newTeamName.trim());
-    if (existingTeam) {
-      alert('Team already exists!');
-      return;
+    try {
+      const teamData = {
+        name: newTeamName.trim(),
+        organisationId: currentCompany.id,
+        // Add any other required fields for team creation
+      };
+      
+      await createTeam(teamData).unwrap();
+      
+      // Clear the input and refetch teams
+      setNewTeamName('');
+      refetchTeams(); // Refresh the teams list
+      
+    } catch (error) {
+      console.error('Failed to create team:', error);
+      alert('Failed to create team. Please try again.');
     }
-    
-    const newTeam = {
-      name: newTeamName.trim(),
-      members: [],
-      createdAt: Date.now()
-    };
-    
-    const updatedCompany = {
-      ...currentCompany,
-      teams: [...currentCompany.teams, newTeam]
-    };
-    
-    const updatedCompanies = companies.map(c => 
-      c.id === currentCompany.id ? updatedCompany : c
-    );
-    
-    setCompanies(updatedCompanies);
-    setCurrentCompany(updatedCompany);
-    setNewTeamName('');
   };
 
   const handleAddMemberToTeam = () => {
@@ -404,6 +395,9 @@ const TaskManager = () => {
   const filteredTeams = currentCompany?.teams.map(team => team.name) || [];
   const filteredEmployees = currentCompany?.employees || [];
 
+  // Update the teams display to use API data
+  const currentCompanyTeams = teamsData?.data || [];
+
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
       <div className="max-w-7xl mx-auto rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-gray-800 shadow-lg">
@@ -536,18 +530,23 @@ const TaskManager = () => {
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="Enter team name"
                   className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  disabled={creatingTeam}
                 />
                 <button
                   onClick={handleCreateTeam}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition duration-200"
+                  disabled={creatingTeam || !newTeamName.trim()}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200"
                 >
-                  Create Team
+                  {creatingTeam ? 'Creating...' : 'Create Team'}
                 </button>
               </div>
+              {createTeamError && (
+                <p className="text-red-500 text-sm mt-2">Error creating team: {createTeamError.message}</p>
+              )}
             </div>
 
             {/* Add Member to Team Section */}
-            {currentCompany.teams && currentCompany.teams.length > 0 && (
+            {currentCompanyTeams.length > 0 && (
               <div className="mt-4 p-3 bg-gray-300 dark:bg-gray-600 rounded-lg">
                 <h3 className="text-lg font-semibold mb-3">Add Member to Team</h3>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -559,8 +558,8 @@ const TaskManager = () => {
                       className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
                     >
                       <option value="">Select Team</option>
-                      {currentCompany.teams.map((team, index) => (
-                        <option key={index} value={team.name}>{team.name}</option>
+                      {currentCompanyTeams.map((team, index) => (
+                        <option key={team.id || index} value={team.team_name}>{team.team_name}</option>
                       ))}
                     </select>
                   </div>
@@ -585,30 +584,36 @@ const TaskManager = () => {
                 {/* Display Teams and Members */}
                 <div className="mt-4 space-y-3">
                   <h4 className="text-md font-semibold">Teams & Members:</h4>
-                  {currentCompany.teams.map((team, teamIndex) => (
-                    <div key={teamIndex} className="bg-gray-200 dark:bg-gray-700 p-3 rounded-lg">
-                      <div className="flex justify-between items-center mb-2">
-                        <h5 className="font-medium">{team.name}</h5>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {team.members ? team.members.length : 0} members
-                        </span>
-                      </div>
-                      {team.members && team.members.length > 0 ? (
-                        <div className="space-y-1">
-                          {team.members.map((member, memberIndex) => (
-                            <div key={memberIndex} className="flex justify-between items-center text-sm bg-gray-300 dark:bg-gray-600 p-2 rounded">
-                              <span>{member.email}</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Status: {member.status || 'Invited'}
-                              </span>
-                            </div>
-                          ))}
+                  {teamsLoading ? (
+                    <div className="text-gray-500">Loading teams...</div>
+                  ) : teamsError ? (
+                    <div className="text-red-500">Error loading teams: {teamsError.message}</div>
+                  ) : (
+                    currentCompanyTeams.map((team, teamIndex) => (
+                      <div key={team.id || teamIndex} className="bg-gray-200 dark:bg-gray-700 p-3 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <h5 className="font-medium">{team.team_name}</h5>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {team.members ? team.members.length : 0} members
+                          </span>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No members yet</p>
-                      )}
-                    </div>
-                  ))}
+                        {team.members && team.members.length > 0 ? (
+                          <div className="space-y-1">
+                            {team.members.map((member, memberIndex) => (
+                              <div key={memberIndex} className="flex justify-between items-center text-sm bg-gray-300 dark:bg-gray-600 p-2 rounded">
+                                <span>{member.email}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Status: {member.status || 'Invited'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No members yet</p>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -633,16 +638,15 @@ const TaskManager = () => {
               <div className="flex items-center space-x-2">
                 <label htmlFor="assignTeam" className="text-gray-600 dark:text-gray-300">Assign to Team:</label>
                 <select
-                  id="assignTeam"
-                  value={selectedTeam}
-                  onChange={(e) => setSelectedTeam(e.target.value)}
-                  className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
-                >
-                  <option value="">Select Team</option>
-                  {filteredTeams.map((team, index) => (
-                    <option key={index} value={team}>{team}</option>
-                  ))}
-                </select>
+                      value={selectedTeamForMember}
+                      onChange={(e) => setSelectedTeamForMember(e.target.value)}
+                      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
+                    >
+                      <option value="">Select Team</option>
+                      {currentCompanyTeams.map((team, index) => (
+                        <option key={team.id || index} value={team.team_name}>{team.team_name}</option>
+                      ))}
+                    </select>
               </div>
               <div className="flex items-center space-x-2">
                 <label htmlFor="assignEmployee" className="text-gray-600 dark:text-gray-300">Assign to Employee:</label>

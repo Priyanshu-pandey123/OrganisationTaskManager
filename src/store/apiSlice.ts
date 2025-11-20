@@ -43,7 +43,7 @@ export const apiSlice = createApi({
 
     getTeamsByOrganisationId: builder.query({
       query: (organisationId) => ({
-        url: `team/getteam/${organisationId}`,
+        url: `/v1/team/getteam/${organisationId}`,
         method: "GET",
       }),
     }),
@@ -84,9 +84,12 @@ export const apiSlice = createApi({
     }),
     createTeam: builder.mutation({
       query: (team) => ({
-        url: '/team/creatteam',
+        url: '/v1/team/createteam',
         method: 'POST',
-        body: team,
+        body: {
+          team_name:team.name,
+          org_id:team.organisationId
+        },
       }),
     }),
   }),
