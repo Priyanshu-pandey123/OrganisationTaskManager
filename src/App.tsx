@@ -7,7 +7,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import TaskManager from './components/TaskManager';
 import EmailVerification from './components/EmailVerification';
-
+import AcceptInvitation from './pages/AcceptInvitation';
 function App() {
 
   return (
@@ -17,6 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth/verify/:token" element={<EmailVerification />} />
+          <Route path="/invite/accept/:token" element={<AcceptInvitation />} />
           <Route path="/taskManager" element={<TaskManager />} />
         </Routes>
         {/* <Footer /> */}
