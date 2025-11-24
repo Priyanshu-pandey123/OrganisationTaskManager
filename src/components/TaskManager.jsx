@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation } from '../store/apiSlice'
+import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery } from '../store/apiSlice'
 import { data } from 'autoprefixer';
 const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
@@ -40,6 +40,17 @@ const TaskManager = () => {
      skip: !currentCompany?.id 
    });
 
+   // Fetch team members using getMemberOfTeamAndOrg API
+   const { 
+     data: teamMembersData, 
+     isLoading: teamMembersLoading, 
+     error: teamMembersError,
+     refetch: refetchTeamMembers
+   } = useGetMemberOfTeamAndOrgQuery(
+     selectedTeam ? { orgId: currentCompany?.id, teamId: selectedTeam } : { orgId: '', teamId: '' },
+     { skip: !currentCompany?.id || !selectedTeam }
+   );
+
 
   useEffect(() => {
     if (companiesData?.data) {
@@ -75,7 +86,6 @@ const TaskManager = () => {
       setSelectedEmployee(parsedCurrentCompany.employees[0]?.id || '');
     }
   }, []);
-
 
 
 
@@ -236,13 +246,17 @@ const TaskManager = () => {
   const handleAddTask = () => {
     if (!currentCompany || !newTaskTitle.trim() || !selectedTeam || !selectedEmployee) return;
     
+    // Find the selected team name for display
+    const selectedTeamData = currentCompanyTeams.find(team => team.team_id === selectedTeam);
+    const teamName = selectedTeamData?.team_name || selectedTeam;
+    
     const newTask = {
       id: 'task-' + Date.now(),
       companyId: currentCompany.id,
       title: newTaskTitle,
-      assignedTo: currentCompany.employees.find(e => e.id === selectedEmployee)?.name || 'N/A',
+      assignedTo: selectedEmployee, // Now using email from API
       assignedEmployeeId: selectedEmployee,
-      team: selectedTeam,
+      team: teamName,
       subtasks: [],
       completed: false,
       createdAt: Date.now(),
@@ -391,6 +405,12 @@ const TaskManager = () => {
 
   const filteredTeams = currentCompany?.teams.map(team => team.name) || [];
   const filteredEmployees = currentCompany?.employees || [];
+
+  // Get all team members from API data
+  const allTeamMembers = teamsData?.data?.flatMap(team => team.members || []) || [];
+  
+  // Calculate total users across all teams (unique by email)
+  const totalUsers = [...new Set(allTeamMembers.map(member => member.email))].length;
 
   // Update the teams display to use API data
   const currentCompanyTeams = teamsData?.data || [];
