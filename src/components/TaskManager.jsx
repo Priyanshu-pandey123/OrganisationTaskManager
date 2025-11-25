@@ -747,7 +747,7 @@ const TaskManager = () => {
                   </option>
                   {taskCreationTeamMembersData?.data?.users?.map((member, index) => (
                     <option key={index} value={member.email}>
-                      {member.name || 'Unknown User'} ({member.email})
+                      {member?.full_name || 'Unknown User'} ({member.email})
                     </option>
                   ))}
                 </select>

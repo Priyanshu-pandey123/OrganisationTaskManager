@@ -79,9 +79,6 @@ export const apiSlice = createApi({
       query: (authToken) => ({
         url: '/v1/auth/me',
         method: 'GET',
-        headers: {
-          'auth_token': `Bearer ${authToken}`,
-        },
       }),
     }),
     createTeam: builder.mutation({

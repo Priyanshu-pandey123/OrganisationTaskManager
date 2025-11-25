@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useLoginMutation, useMeQuery } from '../store/apiSlice';
+import { useLoginMutation, useMeQuery, useAcceptInvitationPostMutation } from '../store/apiSlice';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess, loginFailure } from '../store/slices/authSlice';
 import { useAcceptInvitation } from '../hooks/useInvitation';
@@ -11,6 +11,7 @@ const Login = ({ onToggleForm }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [login, { isLoading }] = useLoginMutation();
+  const [acceptInvitationPost] = useAcceptInvitationPostMutation();
   const { acceptInvite, isAccepting, acceptError } = useAcceptInvitation();
   
   // State to track if we should fetch profile after login
@@ -117,31 +118,19 @@ const Login = ({ onToggleForm }) => {
           }
 
           // Accept the invitation using the user_id from profile
-          const acceptInvitation = await fetch('/v1/invitation/accept', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-            },
-            body: JSON.stringify({
-              token: invitationToken,
-              user_id: userId  // Use user_id from profile API
-            })
-          });
+          await acceptInvitationPost({
+            token: invitationToken,
+            user_id: userId
+          }).unwrap();
 
-          if (acceptInvitation.ok) {
-            toast.success('Login successful! Welcome to the team.');
-            
-            // Clear invitation token and redirect to success page
-            localStorage.removeItem('invite_token');
-            navigate('/team-joined', { replace: true });
-          } else {
-            const errorData = await acceptInvitation.json();
-            throw new Error(errorData.message || 'Failed to accept invitation');
-          }
+          toast.success('Login successful! Welcome to the team.');
+          
+          // Clear invitation token and redirect to success page
+          localStorage.removeItem('invite_token');
+          navigate('/team-joined', { replace: true });
         } catch (inviteError) {
           // Handle invitation acceptance error
-          const errorMsg = inviteError?.message || inviteError?.data?.message || 'Login successful, but failed to accept invitation.';
+          const errorMsg = inviteError?.data?.message || inviteError?.message || 'Login successful, but failed to accept invitation.';
           
           if (errorMsg.includes('email does not match')) {
             setInvitationError('Invitation email does not match your account. Please use the correct account.');
@@ -160,8 +149,7 @@ const Login = ({ onToggleForm }) => {
 
       handleInvitationAcceptance();
     }
-  }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate]);
-
+  }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate, acceptInvitationPost]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
