@@ -50,7 +50,7 @@ export const apiSlice = createApi({
     
     createTask: builder.mutation({
       query: (task) => ({
-        url: '/tasks',
+        url: '/v1/task/create-task',
         method: 'POST',
         body: task,
       }),
@@ -112,10 +112,7 @@ export const apiSlice = createApi({
       query: ({ token, user_id }) => ({
         url: `/v1/invitation/accept`,
         method: 'POST',
-        body: {
-          token,
-          user_id
-        }
+        body: task,
       }),
     }),
   }),
@@ -130,7 +127,6 @@ export const {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
   useGetCompaniesQuery,
-  useCreateCompanyMutation,
   useCreateTeamMutation,
   useGetTeamsByOrganisationIdQuery,
   useInviteMemberMutation,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery } from '../store/apiSlice'
 import { data } from 'autoprefixer';
+import TaskAssignmentDrawer from '../components/TaskAssignmentDrawer';
 const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
    const [companies, setCompanies] = useState([]);
@@ -29,6 +30,7 @@ const TaskManager = () => {
    const [isEditingCompanyName, setIsEditingCompanyName] = useState(false);
    const [editingCompanyName, setEditingCompanyName] = useState('');
    const [showDeleteModal, setShowDeleteModal] = useState(false);
+   const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false);
    const [createTeam, { isLoading: creatingTeam, error: createTeamError }] = useCreateTeamMutation();
    const [inviteMember, { isLoading: invitingMember, error: inviteMemberError }] = useInviteMemberMutation();
    const { 
@@ -962,6 +964,26 @@ const TaskManager = () => {
           </div>
         )}
       </div>
+      <TaskAssignmentDrawer
+        isOpen={isTaskDrawerOpen}
+        onClose={() => setIsTaskDrawerOpen(false)}
+        currentCompany={currentCompany}
+        currentCompanyTeams={currentCompanyTeams}
+        teamMembersData={teamMembersData}
+      />
+
+      {/* Floating Action Button */}
+      {currentCompany && (
+        <button
+          onClick={() => setIsTaskDrawerOpen(true)}
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg z-40 transition-colors duration-200"
+          title="Create New Task"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };
