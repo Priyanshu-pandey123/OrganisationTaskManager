@@ -75,11 +75,13 @@ export const apiSlice = createApi({
       query: () => '/v1/org/getall',
     }),
     
-    createCompany: builder.mutation({
-      query: (company) => ({
-        url: '/companies',
-        method: 'POST',
-        body: company,
+    me: builder.query({
+      query: (authToken) => ({
+        url: '/v1/auth/me',
+        method: 'GET',
+        headers: {
+          'auth_token': `Bearer ${authToken}`,
+        },
       }),
     }),
     createTeam: builder.mutation({
@@ -123,6 +125,7 @@ export const apiSlice = createApi({
 });
 export const {
   useLoginMutation,
+  useMeQuery,
   useSignupMutation,
   useVerifyEmailQuery,
   useGetTasksQuery,
@@ -137,4 +140,5 @@ export const {
   useAcceptInvitationQuery,
   useGetMemberOfTeamAndOrgQuery,
   useAcceptInvitationPostMutation
+  
 } = apiSlice;

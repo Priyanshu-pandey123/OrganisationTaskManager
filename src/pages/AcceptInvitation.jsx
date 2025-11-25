@@ -11,11 +11,13 @@ const AcceptInvitation = () => {
   const { invitedEmail, userExists, validationError, isValidating, isValidated, validationFailed } = useInvitationValidation(token);
 
   useEffect(() => {
+    // Save token to localStorage immediately if token exists
+    if (token && !invitationProcessed) {
+      localStorage.setItem("invite_token", token);
+    }
+
     if (isValidated && !invitationProcessed) {
       setInvitationProcessed(true);
-      
-      // Save token to localStorage
-      localStorage.setItem("invite_token", token);
       
       // Redirect based on user existence
       if (userExists === false) {
@@ -44,7 +46,6 @@ const AcceptInvitation = () => {
       }, 3000);
     }
   }, [isValidated, validationFailed, userExists, invitedEmail, token, navigate, invitationProcessed, validationError]);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useLoginMutation } from '../store/apiSlice';
+import { useLoginMutation, useMeQuery } from '../store/apiSlice';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess, loginFailure } from '../store/slices/authSlice';
 import { useAcceptInvitation } from '../hooks/useInvitation';
@@ -13,11 +13,19 @@ const Login = ({ onToggleForm }) => {
   const [login, { isLoading }] = useLoginMutation();
   const { acceptInvite, isAccepting, acceptError } = useAcceptInvitation();
   
+  // State to track if we should fetch profile after login
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   
+  // Fetch user profile when shouldFetchProfile is true
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(authToken, {
+    skip: !shouldFetchProfile || !authToken,
+  });
+
   // Get invitation data from navigation state
   const invitedEmail = location.state?.invitedEmail;
   const invitationToken = location.state?.invitationToken;
-  const isInvitationFlow = true;
+  const isInvitationFlow = !!invitationToken;
 
   const [formData, setFormData] = useState({
     email: invitedEmail || '', // Pre-fill email for invitation flow
@@ -76,28 +84,10 @@ const Login = ({ onToggleForm }) => {
         token: result.token,
       }));
 
-      // If this is an invitation flow, accept the invitation
+      // If this is an invitation flow, trigger profile fetch
       if (isInvitationFlow) {
-        try {
-          await acceptInvite(invitationToken);
-          toast.success('Login successful! Welcome to the team.');
-          
-          // Clear invitation token and redirect to success page
-          localStorage.removeItem('invite_token');
-          navigate('/team-joined', { replace: true });
-        } catch (inviteError) {
-          // Handle invitation acceptance error
-          const errorMsg = inviteError?.data?.message || 'Login successful, but failed to accept invitation.';
-          
-          if (errorMsg.includes('email does not match')) {
-            setInvitationError('Invitation email does not match your account. Please use the correct account.');
-            // Don't redirect - let user try again
-            return;
-          } else {
-            toast.error(errorMsg);
-            navigate('/taskManager');
-          }
-        }
+        setAuthToken(result.token);
+        setShouldFetchProfile(true);
       } else {
         toast.success('Login successful! Welcome back.');
         navigate("/taskManager");
@@ -109,6 +99,68 @@ const Login = ({ onToggleForm }) => {
       toast.error(errorMessage);
     }
   };
+
+  // Effect to handle invitation acceptance after profile is fetched
+  useEffect(() => {
+    if (shouldFetchProfile && profileData && !isProfileLoading) {
+      const handleInvitationAcceptance = async () => {
+        try {
+          if (profileError) {
+            throw new Error('Failed to fetch user profile');
+          }
+
+          // Use user_id from the profile API response
+          const userId = profileData?.data?.user_id;
+
+          if (!userId) {
+            throw new Error('User ID not found in profile');
+          }
+
+          // Accept the invitation using the user_id from profile
+          const acceptInvitation = await fetch('/v1/invitation/accept', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              token: invitationToken,
+              user_id: userId  // Use user_id from profile API
+            })
+          });
+
+          if (acceptInvitation.ok) {
+            toast.success('Login successful! Welcome to the team.');
+            
+            // Clear invitation token and redirect to success page
+            localStorage.removeItem('invite_token');
+            navigate('/team-joined', { replace: true });
+          } else {
+            const errorData = await acceptInvitation.json();
+            throw new Error(errorData.message || 'Failed to accept invitation');
+          }
+        } catch (inviteError) {
+          // Handle invitation acceptance error
+          const errorMsg = inviteError?.message || inviteError?.data?.message || 'Login successful, but failed to accept invitation.';
+          
+          if (errorMsg.includes('email does not match')) {
+            setInvitationError('Invitation email does not match your account. Please use the correct account.');
+            // Don't redirect - let user try again
+            return;
+          } else {
+            toast.error(errorMsg);
+            navigate('/taskManager');
+          }
+        } finally {
+          // Reset state
+          setShouldFetchProfile(false);
+          setAuthToken(null);
+        }
+      };
+
+      handleInvitationAcceptance();
+    }
+  }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
@@ -221,14 +273,14 @@ const Login = ({ onToggleForm }) => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading || isAccepting}
+                disabled={isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white transition duration-150 ease-in-out ${
-                  isLoading || isAccepting
+                  isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)
                     ? 'bg-indigo-400 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                 }`}
               >
-                {isLoading || isAccepting ? (
+                {(isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)) ? (
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
