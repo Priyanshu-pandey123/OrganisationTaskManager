@@ -450,7 +450,7 @@ const TaskManager = () => {
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
-      <div className="max-w-7xl mx-auto rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-gray-800 shadow-lg">
+      <div className="max-w-8xl px-[100px] rounded-xl  bg-gray-100 dark:bg-gray-800 shadow-lg">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-0">Collaborative Task Manager</h1>
@@ -703,88 +703,7 @@ const TaskManager = () => {
           </div>
         )}
         
-        {/* New Task Input Section */}
-        {currentCompany && (
-          <div className="mb-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Create New Task</h2>
-            </div>
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-              placeholder="Enter new task"
-              className="w-full px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            />
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <div className="flex items-center space-x-2">
-                <label htmlFor="assignTeam" className="text-gray-600 dark:text-gray-300">Assign to Team:</label>
-                <select
-                      value={selectedTeamForMember}
-                      onChange={(e) => {
-                        setSelectedTeamForMember(e.target.value);
-                        // Reset employee selection when team changes
-                        setSelectedEmployee('');
-                      }}
-                      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
-                    >
-                      <option value="">Select Team</option>
-                      {currentCompanyTeams.map((team, index) => (
-                        <option key={team.id || index} value={team.team_name}>{team.team_name}</option>
-                      ))}
-                    </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <label htmlFor="assignEmployee" className="text-gray-600 dark:text-gray-300">Assign to Employee:</label>
-                <select
-                  id="assignEmployee"
-                  value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                  className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
-                  disabled={!selectedTeamForMember || taskCreationTeamMembersLoading}
-                >
-                  <option value="">
-                    {taskCreationTeamMembersLoading ? 'Loading...' : 'Select Employee'}
-                  </option>
-                  {taskCreationTeamMembersData?.data?.users?.map((member, index) => (
-                    <option key={index} value={member.email}>
-                      {member?.full_name || 'Unknown User'} ({member.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Task List and Filters */}
-        {currentCompany && (
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-2 sm:space-y-0">
-            <h2 className="text-xl font-bold">Task List</h2>
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={showCompletedOnly}
-                  onChange={(e) => setShowCompletedOnly(e.target.checked)}
-                  className="form-checkbox h-5 w-5 text-blue-500 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-600 dark:text-gray-300">Show Completed</span>
-              </label>
-              <select
-                value={employeeFilter}
-                onChange={(e) => setEmployeeFilter(e.target.value)}
-                className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
-              >
-                <option value="">All Employees</option>
-                {filteredEmployees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>{employee.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
+      
 
         {/* Task List */}
         <div className="space-y-2">

@@ -36,7 +36,9 @@ const TaskAssignmentDrawer = ({
     { skip: !taskData.team_id || !currentCompany?.id }
   );
 
-  const teamMembersList = teamMembers?.data || [];
+   console.log(teamMembers,'908(*(*(*(*(*(*(*(')
+
+  const teamMembersList = teamMembers?.data?.users || [];
 
   // Reset form when drawer closes
   useEffect(() => {
