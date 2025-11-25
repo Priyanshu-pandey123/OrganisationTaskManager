@@ -107,7 +107,17 @@ export const apiSlice = createApi({
       query: (token) => `/v1/invitation/validate/${token}`,
     }),
     getMemberOfTeamAndOrg: builder.query({
-      query: ({ orgId, teamId }) => `/users/orgteam?org_id=${orgId}&team_id=${teamId}`,
+      query: ({ orgId, teamId }) => `/v1/users/orgteam?org_id=${orgId}&team_id=${teamId}`,
+    }),
+    acceptInvitationPost: builder.mutation({
+      query: ({ token, user_id }) => ({
+        url: `/v1/invitation/accept`,
+        method: 'POST',
+        body: {
+          token,
+          user_id
+        }
+      }),
     }),
   }),
 });
@@ -125,5 +135,6 @@ export const {
   useGetTeamsByOrganisationIdQuery,
   useInviteMemberMutation,
   useAcceptInvitationQuery,
-  useGetMemberOfTeamAndOrgQuery
+  useGetMemberOfTeamAndOrgQuery,
+  useAcceptInvitationPostMutation
 } = apiSlice;

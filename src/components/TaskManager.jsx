@@ -39,6 +39,8 @@ const TaskManager = () => {
    } = useGetTeamsByOrganisationIdQuery(currentCompany?.id, {
      skip: !currentCompany?.id 
    });
+   const currentCompanyTeams = teamsData?.data || [];
+
 
    // Fetch team members using getMemberOfTeamAndOrg API
    const { 
@@ -50,6 +52,33 @@ const TaskManager = () => {
      selectedTeam ? { orgId: currentCompany?.id, teamId: selectedTeam } : { orgId: '', teamId: '' },
      { skip: !currentCompany?.id || !selectedTeam }
    );
+   
+   // Fetch team members for filtering
+   const { 
+     data: filterTeamMembersData, 
+     isLoading: filterTeamMembersLoading, 
+     error: filterTeamMembersError
+   } = useGetMemberOfTeamAndOrgQuery(
+     selectedTeamFilter ? { 
+       orgId: currentCompany?.id, 
+       teamId: currentCompanyTeams.find(team => team.team_name === selectedTeamFilter)?.team_id 
+     } : { orgId: '', teamId: '' },
+     { skip: !currentCompany?.id || !selectedTeamFilter }
+   );
+   
+   // Fetch team members for task creation
+   const { 
+     data: taskCreationTeamMembersData, 
+     isLoading: taskCreationTeamMembersLoading, 
+     error: taskCreationTeamMembersError
+   } = useGetMemberOfTeamAndOrgQuery(
+     selectedTeamForMember ? { 
+       orgId: currentCompany?.id, 
+       teamId: currentCompanyTeams.find(team => team.team_name === selectedTeamForMember)?.team_id 
+     } : { orgId: '', teamId: '' },
+     { skip: !currentCompany?.id || !selectedTeamForMember }
+   );
+   
 
 
   useEffect(() => {
@@ -244,11 +273,11 @@ const TaskManager = () => {
   // Remove the old handleInviteEmployee function as it's replaced by handleAddMemberToTeam
 
   const handleAddTask = () => {
-    if (!currentCompany || !newTaskTitle.trim() || !selectedTeam || !selectedEmployee) return;
+    if (!currentCompany || !newTaskTitle.trim() || !selectedTeamForMember || !selectedEmployee) return;
     
-    // Find the selected team name for display
-    const selectedTeamData = currentCompanyTeams.find(team => team.team_id === selectedTeam);
-    const teamName = selectedTeamData?.team_name || selectedTeam;
+    // Find the selected team data
+    const selectedTeamData = currentCompanyTeams.find(team => team.team_name === selectedTeamForMember);
+    const teamName = selectedTeamData?.team_name || selectedTeamForMember;
     
     const newTask = {
       id: 'task-' + Date.now(),
@@ -265,6 +294,9 @@ const TaskManager = () => {
     
     setTasks([...tasks, newTask]);
     setNewTaskTitle('');
+    // Reset selections after task creation
+    setSelectedTeamForMember('');
+    setSelectedEmployee('');
   };
 
   const handleToggleTask = (taskId) => {
@@ -413,7 +445,6 @@ const TaskManager = () => {
   const totalUsers = [...new Set(allTeamMembers.map(member => member.email))].length;
 
   // Update the teams display to use API data
-  const currentCompanyTeams = teamsData?.data || [];
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
@@ -636,64 +667,35 @@ const TaskManager = () => {
                 </div>
 
                 {/* Teams Display - Compact Profile View */}
-                <div className="mt-4 space-y-3">
-                  <h4 className="text-md font-semibold">Team Profiles:</h4>
-                  {teamsLoading ? (
-                    <div className="text-gray-500">Loading teams...</div>
-                  ) : teamsError ? (
-                    <div className="text-red-500">Error loading teams: {teamsError.message}</div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {currentCompanyTeams
-                        .filter(team => !selectedTeamFilter || team.team_name === selectedTeamFilter)
-                        .filter(team => !selectedMemberFilter || 
-                          (team.members && team.members.some(member => member.email === selectedMemberFilter))
-                        )
-                        .map((team, teamIndex) => (
-                          <div key={team.id || teamIndex} className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-                            <div className="flex flex-col space-y-3">
-                              {/* Team Header */}
-                              <div className="flex justify-between items-center">
-                                <h5 className="font-semibold text-lg">{team.team_name}</h5>
-                                <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-300 dark:bg-gray-600 px-2 py-1 rounded-full">
-                                  {team.members ? team.members.length : 0}
-                                </span>
+                {selectedTeamFilter && filterTeamMembersData?.data && (
+                  <div className="mt-4 p-3 bg-gray-300 dark:bg-gray-600 rounded-lg">
+                    <h4 className="text-lg font-semibold mb-3">Team Profile: {selectedTeamFilter}</h4>
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Total Members: {filterTeamMembersData.data.total}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {filterTeamMembersData?.data?.user?.map((member, index) => (
+                          <div key={index} className="bg-gray-200 dark:bg-gray-700 p-3 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                {member.name ? member.name.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
                               </div>
-                              
-                              {/* Member Avatars Row */}
-                              <div className="flex items-center space-x-2 overflow-x-auto">
-                                {team.members && team.members.length > 0 ? (
-                                  team.members.map((member, memberIndex) => (
-                                    <div key={memberIndex} className="flex-shrink-0">
-                                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-sm">
-                                        {member.email.charAt(0).toUpperCase()}
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                    No members yet
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Member Status Summary */}
-                              {team.members && team.members.length > 0 && (
-                                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                                  <span>
-                                    Active: {team.members.filter(m => m.status === 'active').length}
-                                  </span>
-                                  <span>
-                                    Invited: {team.members.filter(m => m.status !== 'active').length}
-                                  </span>
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                  {member.name || 'Unknown User'}
                                 </div>
-                              )}
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {member.email}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -718,7 +720,11 @@ const TaskManager = () => {
                 <label htmlFor="assignTeam" className="text-gray-600 dark:text-gray-300">Assign to Team:</label>
                 <select
                       value={selectedTeamForMember}
-                      onChange={(e) => setSelectedTeamForMember(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedTeamForMember(e.target.value);
+                        // Reset employee selection when team changes
+                        setSelectedEmployee('');
+                      }}
                       className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
                     >
                       <option value="">Select Team</option>
@@ -734,10 +740,15 @@ const TaskManager = () => {
                   value={selectedEmployee}
                   onChange={(e) => setSelectedEmployee(e.target.value)}
                   className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
+                  disabled={!selectedTeamForMember || taskCreationTeamMembersLoading}
                 >
-                  <option value="">Select Employee</option>
-                  {filteredEmployees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>{employee.name}</option>
+                  <option value="">
+                    {taskCreationTeamMembersLoading ? 'Loading...' : 'Select Employee'}
+                  </option>
+                  {taskCreationTeamMembersData?.data?.users?.map((member, index) => (
+                    <option key={index} value={member.email}>
+                      {member.name || 'Unknown User'} ({member.email})
+                    </option>
                   ))}
                 </select>
               </div>

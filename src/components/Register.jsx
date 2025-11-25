@@ -1,23 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { useSignupMutation } from '../store/apiSlice';
 import { registerStart, registerSuccess, registerFailure, clearError } from '../store/slices/authSlice';
 import { toggleTheme } from '../store/slices/themeSlice';
+import { useAcceptInvitation } from '../hooks/useInvitation';
 
 const Register = ({ onToggleForm }) => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    username: '',
-    email: '',
-    password: '',
-  });
-
-  const dispatch = useAppDispatch();
+  const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  
+  // Get invitation data from navigation state
+  const invitedEmail = location.state?.invitedEmail;
+  const invitationToken = location.state?.invitationToken;
+  const isInvitationFlow = !!invitationToken;
+
   const { isLoading, error } = useAppSelector(state => state.auth);
   const { isDarkMode } = useAppSelector(state => state.theme);
   const [signup] = useSignupMutation();
+  const { acceptInvite, isAccepting, acceptError } = useAcceptInvitation();
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    username: '',
+    email: invitedEmail || '', // Pre-fill email for invitation flow
+    password: '',
+  });
+
+  const [invitationError, setInvitationError] = useState('');
 
   // Sync theme with document body
   useEffect(() => {
@@ -29,12 +40,22 @@ const Register = ({ onToggleForm }) => {
     }
   }, [isDarkMode]);
 
+  // Clear invitation error when component unmounts or form changes
+  useEffect(() => {
+    return () => setInvitationError('');
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
+    
+    // Clear invitation error when user starts typing
+    if (invitationError) {
+      setInvitationError('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -71,6 +92,12 @@ const Register = ({ onToggleForm }) => {
           verification_token: result.data.verification_token,
         }));
         
+        // For invitation flow, we need the user to verify email first
+        // Don't accept invitation yet - they'll need to verify and login
+        if (isInvitationFlow) {
+          toast.info('Please check your email and verify your account to complete the invitation.');
+        }
+        
         // Toggle to login page
         onToggleForm();
       } else {
@@ -83,6 +110,31 @@ const Register = ({ onToggleForm }) => {
           },
           token: result.token || result.access_token,
         }));
+
+        // If this is an invitation flow, accept the invitation
+        if (isInvitationFlow) {
+          try {
+            await acceptInvite(invitationToken);
+            
+            // Clear invitation token and redirect to success page
+            localStorage.removeItem('invite_token');
+            navigate('/team-joined', { replace: true });
+          } catch (inviteError) {
+            // Handle invitation acceptance error
+            const errorMsg = inviteError?.data?.message || 'Registration successful, but failed to accept invitation.';
+            
+            if (errorMsg.includes('email does not match')) {
+              setInvitationError('Invitation email does not match your account.');
+              // Don't redirect - let user try again
+              return;
+            } else {
+              toast.error(errorMsg);
+              navigate('/taskManager');
+            }
+          }
+        } else {
+          navigate('/taskManager');
+        }
       }
 
     } catch (error) {
@@ -102,12 +154,15 @@ const Register = ({ onToggleForm }) => {
         <div className="p-8 sm:p-10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
-              Create Your Account
+              {isInvitationFlow ? 'Join Your Team' : 'Create Your Account'}
             </h2>
           
           </div>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
-            Start your journey with us today.
+            {isInvitationFlow 
+              ? `Create your account with ${invitedEmail} to join your team.` 
+              : 'Start your journey with us today.'
+            }
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -161,7 +216,7 @@ const Register = ({ onToggleForm }) => {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Email Address
+                Email Address {isInvitationFlow && '(Required)'}
               </label>
               <div className="mt-1">
                 <input
@@ -172,10 +227,20 @@ const Register = ({ onToggleForm }) => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm transition duration-150"
-                  placeholder="you@example.com"
+                  disabled={isInvitationFlow && !!invitedEmail} // Disable if pre-filled for invitation
+                  className={`appearance-none block w-full px-4 py-2 border rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm transition duration-150 ${
+                    isInvitationFlow && invitedEmail 
+                      ? 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 cursor-not-allowed' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder={isInvitationFlow ? invitedEmail : "you@example.com"}
                 />
               </div>
+              {isInvitationFlow && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  You must use the invited email address to join the team.
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -208,19 +273,26 @@ const Register = ({ onToggleForm }) => {
               </div>
             )}
 
+            {/* Invitation Error */}
+            {invitationError && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-md">
+                {invitationError}
+              </div>
+            )}
+
             {/* Submit Button */}
             <div>
               {/* Update the submit button to show loading state from Redux */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isAccepting}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white transition duration-150 ease-in-out ${
-                  isLoading
+                  isLoading || isAccepting
                     ? 'bg-indigo-400 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                 }`}
               >
-                {isLoading ? (
+                {isLoading || isAccepting ? (
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
@@ -242,24 +314,26 @@ const Register = ({ onToggleForm }) => {
                     ></path>
                   </svg>
                  ) : (
-                  'Register'
+                  isInvitationFlow ? 'Join Team' : 'Register'
                 )}
               </button>
             </div>
           </form>
 
           {/* Toggle to Login */}
-          <div className="text-center mt-6">
-            <p className="text-gray-600 dark:text-gray-400">
-              Already have an account?{' '}
-              <button
-                onClick={onToggleForm}
-                className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium transition duration-200"
-              >
-                Sign in here
-              </button>
-            </p>
-          </div>
+          {!isInvitationFlow && (
+            <div className="text-center mt-6">
+              <p className="text-gray-600 dark:text-gray-400">
+                Already have an account?{' '}
+                <button
+                  onClick={onToggleForm}
+                  className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium transition duration-200"
+                >
+                  Sign in here
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

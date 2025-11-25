@@ -1,6 +1,6 @@
- import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAcceptInvitationQuery } from '../store/apiSlice';
+import { useInvitationValidation } from '../hooks/useInvitation';
 import { toast } from 'react-toastify';
 
 const AcceptInvitation = () => {
@@ -8,44 +8,48 @@ const AcceptInvitation = () => {
   const navigate = useNavigate();
   const [invitationProcessed, setInvitationProcessed] = useState(false);
 
-  // Use the accept invitation query
-  const { data, error, isLoading, isSuccess, isError } = useAcceptInvitationQuery(token, {
-    skip: !token || invitationProcessed,
-  });
+  const { invitedEmail, userExists, validationError, isValidating, isValidated, validationFailed } = useInvitationValidation(token);
 
   useEffect(() => {
-    if (isSuccess && data) {
+    if (isValidated && !invitationProcessed) {
       setInvitationProcessed(true);
-      toast.success('Invitation accepted successfully! Welcome to the team.');
       
-      // Redirect to task manager or home page after a short delay
-      setTimeout(() => {
-        // If the user already exists, redirect to login/signup (Home), otherwise go to task manager
-        if (data?.exists) {
-          navigate('/', { replace: true }); // Home page has login/signup
-        } else {
-          navigate('/', { replace: true });
-        }
-      }, 2000);
+      // Save token to localStorage
+      localStorage.setItem("invite_token", token);
+      
+      // Redirect based on user existence
+      if (userExists === false) {
+        // User doesn't exist - redirect to signup with pre-filled email
+        navigate('/?mode=signup', { 
+          state: { invitedEmail, invitationToken: token },
+          replace: true 
+        });
+      } else {
+        // User exists - redirect to login with email hint
+        navigate('/?mode=login', { 
+          state: { invitedEmail, invitationToken: token },
+          replace: true 
+        });
+      }
     }
 
-    if (isError && error) {
+    if (validationFailed && !invitationProcessed) {
       setInvitationProcessed(true);
-      const errorMessage = error?.data?.message || 'Failed to accept invitation. The link may be invalid or expired.';
+      const errorMessage = validationError?.data?.message || 'Invalid or expired invitation link.';
       toast.error(errorMessage);
       
-      // Redirect to home page after showing error
+      // Redirect to home after error
       setTimeout(() => {
         navigate('/', { replace: true });
       }, 3000);
     }
-  }, [isSuccess, isError, data, error, navigate]);
+  }, [isValidated, validationFailed, userExists, invitedEmail, token, navigate, invitationProcessed, validationError]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
         <div className="p-8 sm:p-10 text-center">
-          {isLoading && (
+          {isValidating && (
             <>
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
                 <svg
@@ -69,44 +73,15 @@ const AcceptInvitation = () => {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Accepting Invitation
+                Validating Invitation
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Please wait while we process your team invitation...
+                Please wait while we verify your invitation...
               </p>
             </>
           )}
 
-          {isSuccess && (
-            <>
-              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 mb-4">
-                <svg
-                  className="h-8 w-8 text-green-600 dark:text-green-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Invitation Accepted!
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Welcome to the team! You've successfully joined the organization.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Redirecting you to the task manager...
-              </p>
-            </>
-          )}
-
-          {isError && (
+          {validationFailed && (
             <>
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900 mb-4">
                 <svg
@@ -124,13 +99,13 @@ const AcceptInvitation = () => {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Invitation Failed
+                Invalid Invitation
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {error?.data?.message || 'Unable to accept invitation. The link may be invalid or expired.'}
+                {validationError?.data?.message || 'This invitation link is invalid or has expired.'}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Redirecting you to the home page...
+                Redirecting to home page...
               </p>
             </>
           )}
@@ -153,10 +128,10 @@ const AcceptInvitation = () => {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Invalid Invitation Link
+                Invalid Link
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                The invitation link appears to be malformed or incomplete.
+                The invitation link appears to be malformed.
               </p>
             </>
           )}

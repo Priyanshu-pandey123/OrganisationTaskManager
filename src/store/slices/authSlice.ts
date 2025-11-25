@@ -81,6 +81,16 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     },
+    acceptInvitationSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.isLoading = false;
+      state.error = null;
+      
+      // Persist token
+      localStorage.setItem('user_token', action.payload.token);
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
@@ -106,6 +116,7 @@ export const {
   registerFailure, 
   logout, 
   clearError,
+  acceptInvitationSuccess,
   closeVerificationModal
 } = authSlice.actions;
 export default authSlice.reducer;

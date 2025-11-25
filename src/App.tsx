@@ -8,6 +8,11 @@ import Home from './pages/Home';
 import TaskManager from './components/TaskManager';
 import EmailVerification from './components/EmailVerification';
 import AcceptInvitation from './pages/AcceptInvitation';
+// Add to your routes
+import TeamJoinedSuccess from './components/TeamJoinedSuccess';
+
+// In your routes configuration:
+
 function App() {
 
   return (
@@ -19,6 +24,7 @@ function App() {
           <Route path="/auth/verify/:token" element={<EmailVerification />} />
           <Route path="/invite/accept/:token" element={<AcceptInvitation />} />
           <Route path="/taskManager" element={<TaskManager />} />
+          <Route path="/team-joined" element={<TeamJoinedSuccess />} />
         </Routes>
         {/* <Footer /> */}
       </div>
