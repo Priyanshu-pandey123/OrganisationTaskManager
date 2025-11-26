@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getExpandedRowModel } from '@tanstack/react-table';
 import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users } from 'lucide-react';
 import AssignedUsersModal from '../components/AssignedUsersModal';
+import TaskDetailDrawer from '../components/TaskDetailDrawer'; // Add this import
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
 import { useGetTasksQuery, useMeQuery } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
@@ -12,9 +13,9 @@ const TaskTable = ({ filters }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [expandedRows, setExpandedRows] = useState({});
-    const [subtasks, setSubtasks] = useState({}); 
-    const [comments, setComments] = useState({}); 
-    const [subtaskComments, setSubtaskComments] = useState({}); 
+    const [subtasks, setSubtasks] = useState({}); // Store subtasks for each task
+    const [comments, setComments] = useState({}); // Store comments for each task
+    const [subtaskComments, setSubtaskComments] = useState({}); // Store comments for subtasks
     const [showSubtaskForm, setShowSubtaskForm] = useState(null);
     const [showCommentForm, setShowCommentForm] = useState(null);
     const [showSubtaskCommentForm, setShowSubtaskCommentForm] = useState(null);
@@ -26,6 +27,10 @@ const TaskTable = ({ filters }) => {
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
+    
+    // Drawer state
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
 
     // Get current user from user slice
     const currentUser = useCurrentUser();
@@ -65,6 +70,17 @@ const TaskTable = ({ filters }) => {
     const handleViewSubtaskUsers = (users) => {
         setSelectedUsers(users);
         setIsModalOpen(true);
+    };
+
+    // Add handler for opening task detail drawer
+    const handleTaskClick = (task) => {
+        setSelectedTask(task);
+        setIsDrawerOpen(true);
+    };
+
+    const handleCloseDrawer = () => {
+        setIsDrawerOpen(false);
+        setSelectedTask(null);
     };
 
     const handleCreateSubtask = (taskId) => {
@@ -204,7 +220,14 @@ const TaskTable = ({ filters }) => {
         }),
         columnHelper.accessor('task_name', {
             header: () => 'Task Name',
-            cell: info => <div className="font-semibold text-gray-100">{info.getValue()}</div>,
+            cell: info => (
+                <button 
+                    onClick={() => handleTaskClick(info.row.original)}
+                    className="font-semibold text-left text-indigo-400 hover:text-indigo-300 transition duration-150 hover:underline"
+                >
+                    {info.getValue()}
+                </button>
+            ),
         }),
         columnHelper.accessor('description', {
             header: () => 'Description',
@@ -344,28 +367,27 @@ const TaskTable = ({ filters }) => {
     return (
         <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-indigo-400">MY Task</h2>
-            <div className='flex gap-2'>
-            <button
-                    onClick={() => refetch()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
-                >
-                    Assigned By me
-                </button>
-                <button
+                <h2 className="text-3xl font-bold text-indigo-400">My Task</h2>
+              <div className='flex gap-3'>
+              <button
                     onClick={() => refetch()}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
                 >
                     Assigned To Me
-                    
                 </button>
                 <button
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                >
+                    Assigned By Me
+                </button>
+              <button
                     onClick={() => refetch()}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
                 >
                     Refresh
                 </button>
-            </div>
+              </div>
             </div>
             
             {tasks.length === 0 ? (
@@ -769,6 +791,18 @@ const TaskTable = ({ filters }) => {
                 isOpen={isModalOpen}
                 setIsOpen={setIsModalOpen}
                 users={selectedUsers}
+            />
+
+            {/* Task Detail Drawer */}
+            <TaskDetailDrawer
+                isOpen={isDrawerOpen}
+                onClose={handleCloseDrawer}
+                task={selectedTask}
+                subtasks={subtasks}
+                comments={comments}
+                subtaskComments={subtaskComments}
+                onViewUsers={handleViewUsers}
+                onViewSubtaskUsers={handleViewSubtaskUsers}
             />
         </div>
     );
