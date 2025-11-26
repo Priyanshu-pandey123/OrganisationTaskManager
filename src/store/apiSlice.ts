@@ -47,7 +47,13 @@ export const apiSlice = createApi({
         method: "GET",
       }),
     }),
-    
+    createOrganisation: builder.mutation({
+      query: (organisationData) => ({
+        url: '/v1/org/createorg',
+        method: 'POST',
+        body: { org_name: organisationData },
+      }),
+    }),
     createTask: builder.mutation({
       query: (task) => ({
         url: '/v1/task/create-task',
@@ -118,6 +124,7 @@ export const apiSlice = createApi({
   }),
 });
 export const {
+  useCreateOrganisationMutation,
   useLoginMutation,
   useMeQuery,
   useSignupMutation,

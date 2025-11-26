@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery } from '../store/apiSlice'
+import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery,useCreateOrganisationMutation } from '../store/apiSlice'
 import { data } from 'autoprefixer';
 import TaskAssignmentDrawer from '../components/TaskAssignmentDrawer';
+import { toast } from 'react-toastify';
 const TaskManager = () => {
-  const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useGetCompaniesQuery();
+  const { data: companiesData, isLoading: companiesLoading, error: companiesError, refetch: refetchCompanies } = useGetCompaniesQuery();
    const [companies, setCompanies] = useState([]);
    const [currentCompany, setCurrentCompany] = useState(null);
    const [newCompanyName, setNewCompanyName] = useState('');
@@ -41,6 +42,7 @@ const TaskManager = () => {
    } = useGetTeamsByOrganisationIdQuery(currentCompany?.id, {
      skip: !currentCompany?.id 
    });
+   const [createOrganisation, { isLoading: creatingOrganisation, error: createOrganisationError }] = useCreateOrganisationMutation();
    const currentCompanyTeams = teamsData?.data || [];
 
 
@@ -144,50 +146,29 @@ const TaskManager = () => {
     }
   };
 
-  const handleCreateCompanyAndJoin = () => {
+  const handleCreateCompanyAndJoin = async () => {
     if (!newCompanyName.trim()) return;
-    
-    // Check if company already exists
-    const existingCompany = companies.find(c => c.name === newCompanyName);
-    
-    if (existingCompany) {
-      // Join existing company
-      const isAlreadyEmployee = existingCompany.employees.some(emp => emp.id === userId);
-      if (!isAlreadyEmployee) {
-        const updatedCompany = {
-          ...existingCompany,
-          employees: [...existingCompany.employees, { 
-            id: userId, 
-            name: `Employee ${userId.substring(0, 4)}`, 
-            email: null 
-          }]
-        };
-        const updatedCompanies = companies.map(c => 
-          c.id === existingCompany.id ? updatedCompany : c
-        );
-        setCompanies(updatedCompanies);
-        handleSelectCompany(updatedCompany);
-      } else {
-        handleSelectCompany(existingCompany);
-      }
-    } else {
-      // Create new company
-      const newCompany = {
-        id: 'company-' + Date.now(),
-        name: newCompanyName,
-        teams: ['Default Team'],
-        employees: [{ 
-          id: userId, 
-          name: `Employee ${userId.substring(0, 4)}`, 
-          email: null 
-        }],
-        pendingInvites: []
-      };
-      setCompanies([...companies, newCompany]);
-      handleSelectCompany(newCompany);
+
+    try {
+      // Create organisation using API
+      const result = await createOrganisation(newCompanyName).unwrap();
+      
+      // Show success message
+      toast.success('Organisation created successfully!');
+      
+      // Refresh companies list to include the new organisation
+      refetchCompanies();
+      
+      // Clear the input
+      setNewCompanyName('');
+      
+      // Note: You might want to automatically select the newly created organisation
+      // This would require the API to return the created organisation details
+      
+    } catch (error) {
+      console.error('Failed to create organisation:', error);
+      alert(`Failed to create organisation: ${error?.data?.message || error?.message || 'Unknown error'}`);
     }
-    
-    setNewCompanyName('');
   };
 
   const handleEditCompanyName = () => {
