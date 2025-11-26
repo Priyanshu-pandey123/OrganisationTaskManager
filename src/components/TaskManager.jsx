@@ -3,6 +3,7 @@ import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisation
 import { data } from 'autoprefixer';
 import TaskAssignmentDrawer from '../components/TaskAssignmentDrawer';
 import { toast } from 'react-toastify';
+import TaskTable from '../pages/TaskTable';
 const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError, refetch: refetchCompanies } = useGetCompaniesQuery();
    const [companies, setCompanies] = useState([]);
@@ -45,6 +46,21 @@ const TaskManager = () => {
    const [createOrganisation, { isLoading: creatingOrganisation, error: createOrganisationError }] = useCreateOrganisationMutation();
    const currentCompanyTeams = teamsData?.data || [];
 
+   const [taskFilters, setTaskFilters] = useState({
+    team_id: '',
+    org_id: '',
+    user_id: '',
+    assigned_user: '',
+    search: '',
+    sort_by: '',
+    order: '',
+    page: 1,
+  });
+
+    // Handler to update task filters
+const updateTaskFilters = (updates) => {
+  setTaskFilters(prev => ({ ...prev, ...updates }));
+};
 
    // Fetch team members using getMemberOfTeamAndOrg API
    const { 
@@ -274,6 +290,9 @@ const TaskManager = () => {
       createdAt: Date.now(),
       completedAt: null
     };
+
+
+
     
     setTasks([...tasks, newTask]);
     setNewTaskTitle('');
@@ -831,10 +850,10 @@ const TaskManager = () => {
                 </div>
               ))
             ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-4">Please join or create a company to get started.</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">.</p>
             )
           ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">Please join or create a company to get started.</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4">.</p>
           )}
         </div>
 
@@ -863,6 +882,7 @@ const TaskManager = () => {
             </div>
           </div>
         )}
+      <TaskTable/>
       </div>
       <TaskAssignmentDrawer
         isOpen={isTaskDrawerOpen}
