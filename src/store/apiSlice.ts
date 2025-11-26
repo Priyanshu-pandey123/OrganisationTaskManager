@@ -38,7 +38,7 @@ export const apiSlice = createApi({
     }),
     
     getTasks: builder.query({
-      query: () => '/tasks',
+      query: (user_id) => `/v1/task?user_id=${user_id}`,
     }),
 
     getTeamsByOrganisationId: builder.query({
@@ -79,6 +79,9 @@ export const apiSlice = createApi({
     
     getCompanies: builder.query({
       query: () => '/v1/org/getall',
+    }),
+    getTask: builder.query({
+      query: () => '/v1/subtask/create-subtask',
     }),
     
     me: builder.query({
@@ -139,6 +142,7 @@ export const {
   useInviteMemberMutation,
   useAcceptInvitationQuery,
   useGetMemberOfTeamAndOrgQuery,
-  useAcceptInvitationPostMutation
+  useAcceptInvitationPostMutation,
+  useGetTaskQuery
   
 } = apiSlice;

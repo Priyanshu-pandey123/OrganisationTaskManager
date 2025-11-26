@@ -1,371 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getExpandedRowModel } from '@tanstack/react-table';
-import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown } from 'lucide-react';
+import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users } from 'lucide-react';
 import AssignedUsersModal from '../components/AssignedUsersModal';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-
-const taskData = {
-    "status": true,
-    "code": 200,
-    "message": "Tasks fetched successfully",
-    "data": {
-        "total": 11,
-        "page": 1,
-        "limit": 20,
-        "tasks": [
-            {
-                "task_id": "0540d3dc-c346-431e-b912-23856478b565",
-                "task_name": "Testing the task creation",
-                "description": "made some changes in the models",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-25T18:30:32.000Z",
-                "updated_at": "2025-11-25T18:30:32.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    },
-                    {
-                        "user_id": "d41ff270-961f-4464-9f21-c650d3d9586d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav12@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": false
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "ac9a37c2-c871-42cc-a4c3-2f640acc3c79",
-                "task_name": "Updated Task Name",
-                "description": "Updated",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_at": "2025-11-25T18:30:06.000Z",
-                "status": "in_progress",
-                "priority": "high",
-                "due_date": "2025-11-20T00:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-25T18:29:24.000Z",
-                "updated_at": "2025-11-25T18:30:06.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                }
-            },
-            {
-                "task_id": "b06eac83-235d-4483-95a6-a276b254824a",
-                "task_name": "Updated Task Name",
-                "description": "Updated",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_at": "2025-11-20T11:57:51.000Z",
-                "status": "in_progress",
-                "priority": "high",
-                "due_date": "2025-11-20T00:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-16T11:23:04.000Z",
-                "updated_at": "2025-11-20T11:57:51.000Z",
-                "assigned_users": [],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                }
-            },
-            {
-                "task_id": "528d1e8a-bae1-4a6d-be35-02be907d08f4",
-                "task_name": "Testing the task creation",
-                "description": "made some changes in the models",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T18:44:36.000Z",
-                "updated_at": "2025-11-11T18:44:36.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "30f8d69a-b968-40b8-88f5-96b233e97990",
-                "task_name": "Testing the task creation",
-                "description": "made some changes in the models",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:35:30.000Z",
-                "updated_at": "2025-11-11T16:35:30.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "5247b93b-7135-422e-bcd8-cee871f7adf7",
-                "task_name": "Testing the task creation",
-                "description": "made some changes in the models",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:33:02.000Z",
-                "updated_at": "2025-11-11T16:33:02.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "51576997-6f7d-4c23-986f-6dd65e6803c7",
-                "task_name": "Prepare sprint planning",
-                "description": "Draft agenda and collect metrics",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:28:05.000Z",
-                "updated_at": "2025-11-11T16:28:05.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "a07ddd2e-937f-4c7b-88db-9e2d315156ce",
-                "task_name": "Prepare sprint planning",
-                "description": "Draft agenda and collect metrics",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:26:50.000Z",
-                "updated_at": "2025-11-11T16:26:50.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "ea76d208-0cd6-42d9-9f03-ef25920a583f",
-                "task_name": "Prepare sprint planning",
-                "description": "Draft agenda and collect metrics",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:25:59.000Z",
-                "updated_at": "2025-11-11T16:25:59.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "13606352-2bf5-4b36-a9c7-4459b17f37cf",
-                "task_name": "Prepare sprint planning",
-                "description": "Draft agenda and collect metrics",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:24:31.000Z",
-                "updated_at": "2025-11-11T16:24:31.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            },
-            {
-                "task_id": "c26fe019-770e-42d6-a059-4da0ba86ceff",
-                "task_name": "Prepare sprint planning",
-                "description": "Draft agenda and collect metrics",
-                "team_id": "3b4a5d4f-63b5-4381-902d-990e6ef1e2df",
-                "created_by_user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                "last_edited_by": null,
-                "last_edited_at": null,
-                "status": "todo",
-                "priority": "medium",
-                "due_date": "2025-11-15T12:00:00.000Z",
-                "is_deleted": false,
-                "created_at": "2025-11-11T16:20:11.000Z",
-                "updated_at": "2025-11-11T16:20:11.000Z",
-                "assigned_users": [
-                    {
-                        "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                        "full_name": "Saurav Bhardwaj",
-                        "email": "saurav@swiftramp.in",
-                        "TaskAssignment": {
-                            "can_edit": true
-                        }
-                    }
-                ],
-                "creator": {
-                    "user_id": "ce8b79dc-9598-4dda-b20e-b80e5e3ecd1d",
-                    "full_name": "Saurav Bhardwaj",
-                    "email": "saurav@swiftramp.in"
-                },
-                "last_editor": null
-            }
-        ]
-    }
-}
-
-const data = taskData.data.tasks;
+import { useGetTasksQuery } from '../store/apiSlice';
+import { useCurrentUser } from '../store/hooks';
 
 const columnHelper = createColumnHelper();
 
@@ -375,17 +14,44 @@ const TaskTable = ({ filters }) => {
     const [expandedRows, setExpandedRows] = useState({});
     const [subtasks, setSubtasks] = useState({}); // Store subtasks for each task
     const [comments, setComments] = useState({}); // Store comments for each task
+    const [subtaskComments, setSubtaskComments] = useState({}); // Store comments for subtasks
     const [showSubtaskForm, setShowSubtaskForm] = useState(null);
     const [showCommentForm, setShowCommentForm] = useState(null);
+    const [showSubtaskCommentForm, setShowSubtaskCommentForm] = useState(null);
+    const [showSubtaskAssignForm, setShowSubtaskAssignForm] = useState(null);
     const [newSubtaskName, setNewSubtaskName] = useState('');
+    const [newSubtaskDescription, setNewSubtaskDescription] = useState('');
+    const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
+    const [newSubtaskAssignees, setNewSubtaskAssignees] = useState([]);
     const [newComment, setNewComment] = useState('');
+    const [newSubtaskComment, setNewSubtaskComment] = useState('');
+    const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
+
+    // Get current user from user slice instead of auth slice
+    const currentUser = useCurrentUser();
+
+    // Fetch tasks using the API
+    const { data: apiResponse, isLoading, error, refetch } = useGetTasksQuery(currentUser?.id, {
+        skip: !currentUser?.id, // Skip the query if user ID is not available
+    });
+     console.log(apiResponse,'form the api response')
+
+    // Extract tasks from API response
+    const tasks = apiResponse?.data?.tasks || [];
 
     // Log filters to show which query would be used
     useEffect(() => {
         console.log('Current task filters:', filters);
-    }, [filters]);
+        console.log('API Response:', apiResponse);
+        console.log('Tasks:', tasks);
+    }, [filters, apiResponse, tasks]);
     
     const handleViewUsers = (users) => {
+        setSelectedUsers(users);
+        setIsModalOpen(true);
+    };
+
+    const handleViewSubtaskUsers = (users) => {
         setSelectedUsers(users);
         setIsModalOpen(true);
     };
@@ -394,20 +60,62 @@ const TaskTable = ({ filters }) => {
         if (newSubtaskName.trim()) {
             const newSubtask = {
                 id: Date.now().toString(),
-                name: newSubtaskName.trim(),
+                task_id: taskId,
+                subtask_name: newSubtaskName.trim(),
+                description: newSubtaskDescription.trim(),
                 status: 'todo',
                 priority: 'medium',
+                due_date: newSubtaskDueDate || null,
+                assignees: newSubtaskAssignees,
                 created_at: new Date().toISOString(),
-                assigned_users: []
+                assigned_users: newSubtaskAssignees // Keep for backward compatibility
             };
             
             setSubtasks(prev => ({
                 ...prev,
                 [taskId]: [...(prev[taskId] || []), newSubtask]
             }));
+            
+            // Reset form
             setNewSubtaskName('');
+            setNewSubtaskDescription('');
+            setNewSubtaskDueDate('');
+            setNewSubtaskAssignees([]);
             setShowSubtaskForm(null);
         }
+    };
+
+    const handleSubtaskAssigneeToggle = (user) => {
+        setNewSubtaskAssignees(prev => {
+            const isSelected = prev.some(u => u.user_id === user.user_id);
+            if (isSelected) {
+                return prev.filter(u => u.user_id !== user.user_id);
+            } else {
+                return [...prev, user];
+            }
+        });
+    };
+
+    const handleDeleteSubtask = (taskId, subtaskId) => {
+        setSubtasks(prev => ({
+            ...prev,
+            [taskId]: prev[taskId].filter(subtask => subtask.id !== subtaskId)
+        }));
+    };
+
+    const handleAssignUsersToSubtask = (taskId, subtaskId) => {
+        const updatedSubtasks = subtasks[taskId].map(subtask => 
+            subtask.id === subtaskId 
+                ? { ...subtask, assigned_users: selectedUsersForSubtask }
+                : subtask
+        );
+        
+        setSubtasks(prev => ({
+            ...prev,
+            [taskId]: updatedSubtasks
+        }));
+        setShowSubtaskAssignForm(null);
+        setSelectedUsersForSubtask([]);
     };
 
     const handleAddComment = (taskId) => {
@@ -416,7 +124,7 @@ const TaskTable = ({ filters }) => {
                 id: Date.now().toString(),
                 text: newComment.trim(),
                 created_at: new Date().toISOString(),
-                author: 'Current User' // You can get this from auth context
+                author: currentUser?.full_name || currentUser?.name || 'Current User' // Updated to use currentUser
             };
             
             setComments(prev => ({
@@ -428,10 +136,41 @@ const TaskTable = ({ filters }) => {
         }
     };
 
+    const handleAddSubtaskComment = (taskId, subtaskId) => {
+        if (newSubtaskComment.trim()) {
+            const comment = {
+                id: Date.now().toString(),
+                text: newSubtaskComment.trim(),
+                created_at: new Date().toISOString(),
+                author: currentUser?.full_name || currentUser?.name || 'Current User' // Updated to use currentUser
+            };
+            
+            setSubtaskComments(prev => ({
+                ...prev,
+                [subtaskId]: [...(prev[subtaskId] || []), comment]
+            }));
+            setNewSubtaskComment('');
+            setShowSubtaskCommentForm(null);
+        }
+    };
+
     const toggleRowExpansion = (taskId) => {
         setExpandedRows(prev => ({
             ...prev,
             [taskId]: !prev[taskId]
+        }));
+    };
+
+    const toggleSubtaskStatus = (taskId, subtaskId) => {
+        const updatedSubtasks = subtasks[taskId].map(subtask => 
+            subtask.id === subtaskId 
+                ? { ...subtask, status: subtask.status === 'completed' ? 'todo' : 'completed' }
+                : subtask
+        );
+        
+        setSubtasks(prev => ({
+            ...prev,
+            [taskId]: updatedSubtasks
         }));
     };
 
@@ -510,7 +249,7 @@ const TaskTable = ({ filters }) => {
                         <MessageSquare className="w-4 h-4" />
                     </button>
                     <span className="text-xs text-gray-500">
-                        {comments[row.original.task_id]?.length || 0} comments
+                        {subtasks[row.original.task_id]?.length || 0} subtasks, {comments[row.original.task_id]?.length || 0} comments
                     </span>
                 </div>
             ),
@@ -528,180 +267,469 @@ const TaskTable = ({ filters }) => {
             ),
             enableSorting: false,
         }),
-    ], [expandedRows, comments]);
+    ], [expandedRows, subtasks, comments]);
 
     const table = useReactTable({
-        data,
+        data: tasks,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
     });
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400 mx-auto mb-4"></div>
+                    <h2 className="text-xl font-semibold text-gray-300">Loading Tasks...</h2>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+                <div className="text-center">
+                    <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Tasks</h2>
+                    <p className="text-gray-400 mb-4">
+                        {error?.data?.message || error?.error || 'Failed to load tasks. Please try again.'}
+                    </p>
+                    <button
+                        onClick={() => refetch()}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // No user authenticated
+    if (!currentUser?.id) {
+        return (
+            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+                <div className="text-center">
+                    <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-gray-300 mb-2">Authentication Required</h2>
+                    <p className="text-gray-400">Please log in to view your tasks.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
-            <h2 className="text-3xl font-bold mb-6 text-indigo-400">📝 Task Management Dashboard</h2>
-            <div className="overflow-x-auto shadow-2xl rounded-lg border border-gray-700">
-                <table className="min-w-full divide-y divide-gray-700">
-                    <thead className="bg-gray-800">
-                        {table.getHeaderGroups().map(headerGroup => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map(header => (
-                                    <th
-                                        key={header.id}
-                                        colSpan={header.colSpan}
-                                        className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 cursor-pointer hover:bg-gray-700 transition"
-                                    >
-                                        {header.isPlaceholder ? null : (
-                                            <div
-                                                {...{
-                                                    className: header.column.getCanSort()
-                                                        ? 'flex items-center select-none'
-                                                        : '',
-                                                    onClick: header.column.getToggleSortingHandler(),
-                                                }}
-                                            >
-                                                {flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                                {{
-                                                    asc: <ArrowUp className="ml-2 w-3 h-3 text-indigo-400" />,
-                                                    desc: <ArrowDown className="ml-2 w-3 h-3 text-indigo-400" />,
-                                                }[header.column.getIsSorted()] ?? null}
-                                            </div>
-                                        )}
-                                    </th>
-                                ))}
-                            </tr>
-                        ))}
-                    </thead>
-                    <tbody className="bg-gray-800 divide-y divide-gray-700">
-                        {table.getRowModel().rows.map(row => (
-                            <React.Fragment key={row.id}>
-                                <tr className="hover:bg-gray-700 transition duration-150">
-                                    {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </td>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-3xl font-bold text-indigo-400">📝 Task Management Dashboard</h2>
+                <button
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                >
+                    Refresh
+                </button>
+            </div>
+            
+            {tasks.length === 0 ? (
+                <div className="text-center py-12">
+                    <ListTodo className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-300 mb-2">No Tasks Found</h3>
+                    <p className="text-gray-400">You don't have any tasks yet. Create your first task to get started!</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto shadow-2xl rounded-lg border border-gray-700">
+                    <table className="min-w-full divide-y divide-gray-700">
+                        <thead className="bg-gray-800">
+                            {table.getHeaderGroups().map(headerGroup => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map(header => (
+                                        <th
+                                            key={header.id}
+                                            colSpan={header.colSpan}
+                                            className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 cursor-pointer hover:bg-gray-700 transition"
+                                        >
+                                            {header.isPlaceholder ? null : (
+                                                <div
+                                                    {...{
+                                                        className: header.column.getCanSort()
+                                                            ? 'flex items-center select-none'
+                                                            : '',
+                                                        onClick: header.column.getToggleSortingHandler(),
+                                                    }}
+                                                >
+                                                    {flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                                    {{
+                                                        asc: <ArrowUp className="ml-2 w-3 h-3 text-indigo-400" />,
+                                                        desc: <ArrowDown className="ml-2 w-3 h-3 text-indigo-400" />,
+                                                    }[header.column.getIsSorted()] ?? null}
+                                                </div>
+                                            )}
+                                        </th>
                                     ))}
                                 </tr>
-                                
-                                {/* Subtask Form */}
-                                {showSubtaskForm === row.original.task_id && (
-                                    <tr>
-                                        <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
-                                            <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={newSubtaskName}
-                                                    onChange={(e) => setNewSubtaskName(e.target.value)}
-                                                    placeholder="Enter subtask name..."
-                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                                    onKeyPress={(e) => e.key === 'Enter' && handleCreateSubtask(row.original.task_id)}
-                                                />
-                                                <button
-                                                    onClick={() => handleCreateSubtask(row.original.task_id)}
-                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
-                                                >
-                                                    Add
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowSubtaskForm(null)}
-                                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </td>
+                            ))}
+                        </thead>
+                        <tbody className="bg-gray-800 divide-y divide-gray-700">
+                            {table.getRowModel().rows.map(row => (
+                                <React.Fragment key={row.id}>
+                                    <tr className="hover:bg-gray-700 transition duration-150">
+                                        {row.getVisibleCells().map(cell => (
+                                            <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </td>
+                                        ))}
                                     </tr>
-                                )}
-
-                                {/* Comment Form */}
-                                {showCommentForm === row.original.task_id && (
-                                    <tr>
-                                        <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
-                                            <div className="flex items-center space-x-2">
-                                                <textarea
-                                                    value={newComment}
-                                                    onChange={(e) => setNewComment(e.target.value)}
-                                                    placeholder="Enter your comment..."
-                                                    rows={2}
-                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none"
-                                                />
-                                                <button
-                                                    onClick={() => handleAddComment(row.original.task_id)}
-                                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition"
-                                                >
-                                                    Comment
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowCommentForm(null)}
-                                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {/* Expanded Content */}
-                                {expandedRows[row.original.task_id] && (
-                                    <tr>
-                                        <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
-                                            <div className="space-y-4">
-                                                {/* Subtasks */}
-                                                {subtasks[row.original.task_id]?.length > 0 && (
+                                    
+                                    {/* Subtask Form */}
+                                    {showSubtaskForm === row.original.task_id && (
+                                        <tr>
+                                            <td colSpan={columns.length} className="px-6 py-6 bg-gray-750">
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-semibold text-gray-200">Create New Subtask</h3>
+                                                    
+                                                    {/* Subtask Name */}
                                                     <div>
-                                                        <h4 className="text-sm font-semibold text-gray-300 mb-2">Subtasks:</h4>
-                                                        <div className="space-y-2 ml-4">
-                                                            {subtasks[row.original.task_id].map((subtask) => (
-                                                                <div key={subtask.id} className="flex items-center space-x-2 p-2 bg-gray-700 rounded">
-                                                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                                                    <span className="text-sm text-gray-300">{subtask.name}</span>
-                                                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                                                        subtask.status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'
-                                                                    }`}>
-                                                                        {subtask.status}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                                                            Subtask Name *
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={newSubtaskName}
+                                                            onChange={(e) => setNewSubtaskName(e.target.value)}
+                                                            placeholder="Enter subtask name..."
+                                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                                                            onKeyPress={(e) => e.key === 'Enter' && handleCreateSubtask(row.original.task_id)}
+                                                        />
                                                     </div>
-                                                )}
 
-                                                {/* Comments */}
-                                                {comments[row.original.task_id]?.length > 0 && (
+                                                    {/* Description */}
                                                     <div>
-                                                        <h4 className="text-sm font-semibold text-gray-300 mb-2">Comments:</h4>
-                                                        <div className="space-y-2 ml-4">
-                                                            {comments[row.original.task_id].map((comment) => (
-                                                                <div key={comment.id} className="p-3 bg-gray-700 rounded">
-                                                                    <div className="flex items-center space-x-2 mb-1">
-                                                                        <span className="text-xs font-medium text-gray-400">{comment.author}</span>
-                                                                        <span className="text-xs text-gray-500">
-                                                                            {new Date(comment.created_at).toLocaleString()}
-                                                                        </span>
+                                                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                                                            Description
+                                                        </label>
+                                                        <textarea
+                                                            value={newSubtaskDescription}
+                                                            onChange={(e) => setNewSubtaskDescription(e.target.value)}
+                                                            placeholder="Enter subtask description..."
+                                                            rows={3}
+                                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none"
+                                                        />
+                                                    </div>
+
+                                                    {/* Due Date */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                                                            Due Date
+                                                        </label>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={newSubtaskDueDate}
+                                                            onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                                                            className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:border-indigo-500"
+                                                        />
+                                                    </div>
+
+                                                    {/* Assignees */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                            Assign Users
+                                                        </label>
+                                                        {row.original.assigned_users?.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {row.original.assigned_users.map((user) => (
+                                                                    <button
+                                                                        key={user.user_id}
+                                                                        onClick={() => handleSubtaskAssigneeToggle(user)}
+                                                                        className={`px-3 py-2 rounded text-sm font-medium transition ${
+                                                                            newSubtaskAssignees.some(u => u.user_id === user.user_id)
+                                                                                ? 'bg-indigo-600 text-white'
+                                                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                                        }`}
+                                                                    >
+                                                                        {user.full_name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm text-gray-500">No users available to assign</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Action Buttons */}
+                                                    <div className="flex space-x-3 pt-2">
+                                                        <button
+                                                            onClick={() => handleCreateSubtask(row.original.task_id)}
+                                                            disabled={!newSubtaskName.trim()}
+                                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded transition"
+                                                        >
+                                                            Create Subtask
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowSubtaskForm(null);
+                                                                setNewSubtaskName('');
+                                                                setNewSubtaskDescription('');
+                                                                setNewSubtaskDueDate('');
+                                                                setNewSubtaskAssignees([]);
+                                                            }}
+                                                            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+
+                                    {/* Comment Form */}
+                                    {showCommentForm === row.original.task_id && (
+                                        <tr>
+                                            <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
+                                                <div className="flex items-center space-x-2">
+                                                    <textarea
+                                                        value={newComment}
+                                                        onChange={(e) => setNewComment(e.target.value)}
+                                                        placeholder="Enter your comment..."
+                                                        rows={2}
+                                                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none"
+                                                    />
+                                                    <button
+                                                        onClick={() => handleAddComment(row.original.task_id)}
+                                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition"
+                                                    >
+                                                        Comment
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowCommentForm(null)}
+                                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+
+                                    {/* Expanded Content */}
+                                    {expandedRows[row.original.task_id] && (
+                                        <tr>
+                                            <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
+                                                <div className="space-y-4">
+                                                    {/* Subtasks */}
+                                                    {subtasks[row.original.task_id]?.length > 0 && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Subtasks:</h4>
+                                                            <div className="space-y-3 ml-4">
+                                                                {subtasks[row.original.task_id].map((subtask) => (
+                                                                    <div key={subtask.id} className="border border-gray-600 rounded-lg p-3 bg-gray-700">
+                                                                        <div className="flex items-start justify-between mb-2">
+                                                                            <div className="flex items-center space-x-2 flex-1">
+                                                                                <button
+                                                                                    onClick={() => toggleSubtaskStatus(row.original.task_id, subtask.id)}
+                                                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                                                                        subtask.status === 'completed' 
+                                                                                            ? 'bg-green-500 border-green-500' 
+                                                                                            : 'border-gray-400'
+                                                                                    }`}
+                                                                                >
+                                                                                    {subtask.status === 'completed' && (
+                                                                                        <CheckCircle className="w-3 h-3 text-white" />
+                                                                                    )}
+                                                                                </button>
+                                                                                <span className={`text-sm ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-300'}`}>
+                                                                                    {subtask.subtask_name || subtask.name}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center space-x-1">
+                                                                                <button
+                                                                                    onClick={() => setShowSubtaskAssignForm(subtask.id)}
+                                                                                    className="p-1 text-blue-400 hover:text-blue-300 transition"
+                                                                                    title="Assign Users"
+                                                                                >
+                                                                                    <Users className="w-4 h-4" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setShowSubtaskCommentForm(subtask.id)}
+                                                                                    className="p-1 text-green-400 hover:text-green-300 transition"
+                                                                                    title="Add Comment"
+                                                                                >
+                                                                                    <MessageSquare className="w-4 h-4" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteSubtask(row.original.task_id, subtask.id)}
+                                                                                    className="p-1 text-red-400 hover:text-red-300 transition"
+                                                                                    title="Delete Subtask"
+                                                                                >
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        
+                                                                        {/* Subtask Description */}
+                                                                        {subtask.description && (
+                                                                            <div className="mb-2 text-xs text-gray-400">
+                                                                                {subtask.description}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Subtask Due Date */}
+                                                                        {subtask.due_date && (
+                                                                            <div className="mb-2 text-xs text-gray-400">
+                                                                                <Calendar className="w-3 h-3 inline-block mr-1" />
+                                                                                Due: {formatDueDate(subtask.due_date)}
+                                                                            </div>
+                                                                        )}
+                                                                        
+                                                                        {/* Subtask Users */}
+                                                                        {subtask.assigned_users?.length > 0 && (
+                                                                            <div className="mb-2">
+                                                                                <button
+                                                                                    onClick={() => handleViewSubtaskUsers(subtask.assigned_users)}
+                                                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                                                >
+                                                                                    {subtask.assigned_users.length} assigned user{subtask.assigned_users.length !== 1 ? 's' : ''}
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Subtask Comments */}
+                                                                        {subtaskComments[subtask.id]?.length > 0 && (
+                                                                            <div className="space-y-1 mt-2">
+                                                                                <div className="text-xs text-gray-400 mb-1">Comments:</div>
+                                                                                {subtaskComments[subtask.id].map((comment) => (
+                                                                                    <div key={comment.id} className="bg-gray-600 rounded p-2">
+                                                                                        <div className="flex items-center space-x-2 mb-1">
+                                                                                            <span className="text-xs font-medium text-gray-300">{comment.author}</span>
+                                                                                            <span className="text-xs text-gray-500">
+                                                                                                {new Date(comment.created_at).toLocaleString()}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <p className="text-xs text-gray-200">{comment.text}</p>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Subtask Comment Form */}
+                                                                        {showSubtaskCommentForm === subtask.id && (
+                                                                            <div className="mt-2 space-y-2">
+                                                                                <textarea
+                                                                                    value={newSubtaskComment}
+                                                                                    onChange={(e) => setNewSubtaskComment(e.target.value)}
+                                                                                    placeholder="Add a comment to this subtask..."
+                                                                                    rows={2}
+                                                                                    className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 text-xs resize-none"
+                                                                                />
+                                                                                <div className="flex space-x-2">
+                                                                                    <button
+                                                                                        onClick={() => handleAddSubtaskComment(row.original.task_id, subtask.id)}
+                                                                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition"
+                                                                                    >
+                                                                                        Add Comment
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setShowSubtaskCommentForm(null)}
+                                                                                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition"
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Subtask User Assignment Form */}
+                                                                        {showSubtaskAssignForm === subtask.id && (
+                                                                            <div className="mt-2 space-y-2">
+                                                                                <div className="text-xs text-gray-300 mb-1">Assign users to this subtask:</div>
+                                                                                {/* You can replace this with a proper user selection component */}
+                                                                                <div className="flex flex-wrap gap-1">
+                                                                                    {row.original.assigned_users.map((user) => (
+                                                                                        <button
+                                                                                            key={user.user_id}
+                                                                                            onClick={() => {
+                                                                                                const isSelected = selectedUsersForSubtask.some(u => u.user_id === user.user_id);
+                                                                                                if (isSelected) {
+                                                                                                setSelectedUsersForSubtask(prev => prev.filter(u => u.user_id !== user.user_id));
+                                                                                                } else {
+                                                                                                    setSelectedUsersForSubtask(prev => [...prev, user]);
+                                                                                                }
+                                                                                            }}
+                                                                                            className={`px-2 py-1 rounded text-xs ${
+                                                                                                selectedUsersForSubtask.some(u => u.user_id === user.user_id)
+                                                                                                    ? 'bg-blue-600 text-white'
+                                                                                                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {user.full_name}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                                <div className="flex space-x-2">
+                                                                                    <button
+                                                                                        onClick={() => handleAssignUsersToSubtask(row.original.task_id, subtask.id)}
+                                                                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition"
+                                                                                    >
+                                                                                        Assign
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            setShowSubtaskAssignForm(null);
+                                                                                            setSelectedUsersForSubtask([]);
+                                                                                        }}
+                                                                                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition"
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    <p className="text-sm text-gray-300">{comment.text}</p>
-                                                                </div>
-                                                            ))}
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {(!subtasks[row.original.task_id]?.length && !comments[row.original.task_id]?.length) && (
-                                                    <p className="text-sm text-gray-500 italic">No subtasks or comments yet.</p>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                                    {/* Task Comments */}
+                                                    {comments[row.original.task_id]?.length > 0 && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Task Comments:</h4>
+                                                            <div className="space-y-2 ml-4">
+                                                                {comments[row.original.task_id].map((comment) => (
+                                                                    <div key={comment.id} className="p-3 bg-gray-700 rounded">
+                                                                        <div className="flex items-center space-x-2 mb-1">
+                                                                            <span className="text-xs font-medium text-gray-400">{comment.author}</span>
+                                                                            <span className="text-xs text-gray-500">
+                                                                                {new Date(comment.created_at).toLocaleString()}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-sm text-gray-300">{comment.text}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {(!subtasks[row.original.task_id]?.length && !comments[row.original.task_id]?.length) && (
+                                                        <p className="text-sm text-gray-500 italic">No subtasks or comments yet.</p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
             
             <AssignedUsersModal
                 isOpen={isModalOpen}

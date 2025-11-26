@@ -3,6 +3,7 @@ import { apiSlice } from './apiSlice';
 import authReducer from './slices/authSlice';
 import tasksReducer from './slices/tasksSlice';
 import themeReducer from './slices/themeSlice';
+import userReducer from './slices/userSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     auth: authReducer,
     tasks: tasksReducer,
     theme: themeReducer,
+    user: userReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),

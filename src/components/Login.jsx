@@ -14,13 +14,9 @@ const Login = ({ onToggleForm }) => {
   const [acceptInvitationPost] = useAcceptInvitationPostMutation();
   const { acceptInvite, isAccepting, acceptError } = useAcceptInvitation();
   
-  // State to track if we should fetch profile after login
-  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
-  const [authToken, setAuthToken] = useState(null);
-  
-  // Fetch user profile when shouldFetchProfile is true
-  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(authToken, {
-    skip: !shouldFetchProfile || !authToken,
+  // Always fetch user profile when token is available (this will update the user slice automatically)
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(undefined, {
+    skip: !localStorage.getItem('auth_token'), // Skip if no token
   });
 
   // Get invitation data from navigation state
@@ -85,13 +81,13 @@ const Login = ({ onToggleForm }) => {
         token: result.token,
       }));
 
-      // If this is an invitation flow, trigger profile fetch
-      if (isInvitationFlow) {
-        setAuthToken(result.token);
-        setShouldFetchProfile(true);
-      } else {
+      if (!isInvitationFlow) {
         toast.success('Login successful! Welcome back.');
         navigate("/taskManager");
+      } else {
+        // For invitation flow, handle invitation acceptance
+        // The me query will automatically fetch user data when token is available
+        // We'll handle the invitation acceptance in the useEffect below
       }
     } catch (error) {
       // Handle login failure
@@ -103,7 +99,7 @@ const Login = ({ onToggleForm }) => {
 
   // Effect to handle invitation acceptance after profile is fetched
   useEffect(() => {
-    if (shouldFetchProfile && profileData && !isProfileLoading) {
+    if (isInvitationFlow && profileData && !isProfileLoading) {
       const handleInvitationAcceptance = async () => {
         try {
           if (profileError) {
@@ -140,16 +136,13 @@ const Login = ({ onToggleForm }) => {
             toast.error(errorMsg);
             navigate('/taskManager');
           }
-        } finally {
-          // Reset state
-          setShouldFetchProfile(false);
-          setAuthToken(null);
         }
       };
 
       handleInvitationAcceptance();
     }
-  }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate, acceptInvitationPost]);
+  }, [isInvitationFlow, profileData, isProfileLoading, profileError, invitationToken, navigate, acceptInvitationPost]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
@@ -261,14 +254,14 @@ const Login = ({ onToggleForm }) => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)}
+                disabled={isLoading || isAccepting || isProfileLoading}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white transition duration-150 ease-in-out ${
-                  isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)
+                  isLoading || isAccepting || isProfileLoading
                     ? 'bg-indigo-400 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                 }`}
               >
-                {(isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)) ? (
+                {(isLoading || isAccepting || isProfileLoading) ? (
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
