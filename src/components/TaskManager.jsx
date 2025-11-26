@@ -246,7 +246,7 @@ const updateTaskFilters = (updates) => {
         alert('Selected team not found!');
         return;
       }
-      console.log(selectedTeam,'*&*&*&*&*&*&*&*')
+
 
       // Call the invite member API
       await inviteMember({

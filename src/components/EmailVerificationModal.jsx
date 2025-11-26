@@ -14,7 +14,7 @@ const EmailVerificationModal = () => {
 
   const handleResendEmail = () => {
     // TODO: Implement resend verification email functionality
-    console.log('Resend verification email to:', pendingVerificationUser.email);
+
     // You can add an API call here to resend the verification email
   };
 

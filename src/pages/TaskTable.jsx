@@ -3,7 +3,7 @@ import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getExpa
 import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users } from 'lucide-react';
 import AssignedUsersModal from '../components/AssignedUsersModal';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery } from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 
 const columnHelper = createColumnHelper();
@@ -12,9 +12,9 @@ const TaskTable = ({ filters }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [expandedRows, setExpandedRows] = useState({});
-    const [subtasks, setSubtasks] = useState({}); // Store subtasks for each task
-    const [comments, setComments] = useState({}); // Store comments for each task
-    const [subtaskComments, setSubtaskComments] = useState({}); // Store comments for subtasks
+    const [subtasks, setSubtasks] = useState({}); 
+    const [comments, setComments] = useState({}); 
+    const [subtaskComments, setSubtaskComments] = useState({}); 
     const [showSubtaskForm, setShowSubtaskForm] = useState(null);
     const [showCommentForm, setShowCommentForm] = useState(null);
     const [showSubtaskCommentForm, setShowSubtaskCommentForm] = useState(null);
@@ -27,23 +27,34 @@ const TaskTable = ({ filters }) => {
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
 
-    // Get current user from user slice instead of auth slice
+    // Get current user from user slice
     const currentUser = useCurrentUser();
-
-    // Fetch tasks using the API
-    const { data: apiResponse, isLoading, error, refetch } = useGetTasksQuery(currentUser?.id, {
-        skip: !currentUser?.id, // Skip the query if user ID is not available
+    
+    // Call me API if currentUser is null but we have an auth token
+    const { data: userData, isLoading: isUserLoading, error: userError } = useMeQuery(undefined, {
+        skip: !!currentUser || !localStorage.getItem('auth_token'), // Skip if we already have user data or no token
     });
-     console.log(apiResponse,'form the api response')
+
+    // Use user ID from either currentUser or the fetched userData
+    const userId = currentUser?.data?.user_id ;
+    console.log(currentUser, 'from the redux');
+    console.log(userData, 'from me API');
+
+    // Fetch tasks using the API with the user ID
+    const { data: apiResponse, isLoading: isTasksLoading, error: tasksError, refetch } = useGetTasksQuery(userId, {
+        skip: !userId, // Skip the query if user ID is not available
+    });
+    
+    // console.log(apiResponse, 'from the api response');
 
     // Extract tasks from API response
     const tasks = apiResponse?.data?.tasks || [];
 
     // Log filters to show which query would be used
     useEffect(() => {
-        console.log('Current task filters:', filters);
-        console.log('API Response:', apiResponse);
-        console.log('Tasks:', tasks);
+        // console.log('Current task filters:', filters);
+        // console.log('API Response:', apiResponse);
+        // console.log('Tasks:', tasks);
     }, [filters, apiResponse, tasks]);
     
     const handleViewUsers = (users) => {
@@ -276,13 +287,19 @@ const TaskTable = ({ filters }) => {
         getExpandedRowModel: getExpandedRowModel(),
     });
 
+    // Combined loading state
+    const isLoading = isUserLoading || isTasksLoading;
+    const error = userError || tasksError;
+
     // Loading state
     if (isLoading) {
         return (
             <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400 mx-auto mb-4"></div>
-                    <h2 className="text-xl font-semibold text-gray-300">Loading Tasks...</h2>
+                    <h2 className="text-xl font-semibold text-gray-300">
+                        {isUserLoading ? 'Loading user data...' : 'Loading Tasks...'}
+                    </h2>
                 </div>
             </div>
         );
@@ -294,9 +311,11 @@ const TaskTable = ({ filters }) => {
             <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
                 <div className="text-center">
                     <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Tasks</h2>
+                    <h2 className="text-xl font-semibold text-red-400 mb-2">
+                        {userError ? 'Error Loading User Data' : 'Error Loading Tasks'}
+                    </h2>
                     <p className="text-gray-400 mb-4">
-                        {error?.data?.message || error?.error || 'Failed to load tasks. Please try again.'}
+                        {error?.data?.message || error?.error || 'Failed to load data. Please try again.'}
                     </p>
                     <button
                         onClick={() => refetch()}
@@ -309,29 +328,44 @@ const TaskTable = ({ filters }) => {
         );
     }
 
-    // No user authenticated
-    if (!currentUser?.id) {
-        return (
-            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                    <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-300 mb-2">Authentication Required</h2>
-                    <p className="text-gray-400">Please log in to view your tasks.</p>
-                </div>
-            </div>
-        );
-    }
+    // // No user authenticated
+    // if (!currentUser?.) {
+    //     return (
+    //         <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+    //             <div className="text-center">
+    //                 <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+    //                 <h2 className="text-xl font-semibold text-gray-300 mb-2">Authentication Required</h2>
+    //                 <p className="text-gray-400">Please log in to view your tasks.</p>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-indigo-400">📝 Task Management Dashboard</h2>
+                <h2 className="text-3xl font-bold text-indigo-400">MY Task</h2>
+            <div className='flex gap-2'>
+            <button
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                >
+                    Assigned By me
+                </button>
+                <button
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                >
+                    Assigned To Me
+                    
+                </button>
                 <button
                     onClick={() => refetch()}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
                 >
                     Refresh
                 </button>
+            </div>
             </div>
             
             {tasks.length === 0 ? (

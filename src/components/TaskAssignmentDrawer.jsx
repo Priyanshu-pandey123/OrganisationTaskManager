@@ -36,7 +36,7 @@ const TaskAssignmentDrawer = ({
     { skip: !taskData.team_id || !currentCompany?.id }
   );
 
-   console.log(teamMembers,'908(*(*(*(*(*(*(*(')
+
 
   const teamMembersList = teamMembers?.data?.users || [];
 
@@ -115,7 +115,7 @@ const TaskAssignmentDrawer = ({
       toast.success('Task created successfully!');
       onClose();
     } catch (error) {
-      console.error('Failed to create task:', error);
+
       toast.error(error?.data?.message || 'Failed to create task');
     }
   };
@@ -226,7 +226,7 @@ const TaskAssignmentDrawer = ({
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
+                
                 </select>
               </div>
 
@@ -242,7 +242,6 @@ const TaskAssignmentDrawer = ({
                 >
                   <option value="todo">To Do</option>
                   <option value="in_progress">In Progress</option>
-                  <option value="review">Review</option>
                   <option value="done">Done</option>
                 </select>
               </div>
