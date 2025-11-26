@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery,useCreateOrganisationMutation } from '../store/apiSlice'
+import {  useGetCompaniesQuery, useCreateTeamMutation, useGetTeamsByOrganisationIdQuery,useInviteMemberMutation, useGetMemberOfTeamAndOrgQuery,useCreateOrganisationMutation ,useMeQuery} from '../store/apiSlice'
 import { data } from 'autoprefixer';
 import TaskAssignmentDrawer from '../components/TaskAssignmentDrawer';
 import { toast } from 'react-toastify';
 import TaskTable from '../pages/TaskTable';
+import { useAppSelector } from '../store/hooks';
 const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError, refetch: refetchCompanies } = useGetCompaniesQuery();
    const [companies, setCompanies] = useState([]);
@@ -56,6 +57,13 @@ const TaskManager = () => {
     order: '',
     page: 1,
   });
+  // Add this to fetch current user data
+  const { data: userData, isLoading: userLoading, error: userError } = useMeQuery(undefined, {
+    skip: !localStorage.getItem('auth_token'),
+  });
+
+  // Or alternatively, get user from Redux store (if already populated)
+  const currentUser = useAppSelector((state) => state.user.currentUser);
 
     // Handler to update task filters
 const updateTaskFilters = (updates) => {
@@ -262,10 +270,10 @@ const updateTaskFilters = (updates) => {
       // Refetch teams to update the UI with the new member
       refetchTeams();
       
-      alert('Member invited successfully!');
+      toast.success('Member invited successfully!');
     } catch (error) {
       console.error('Failed to invite member:', error);
-      alert('Failed to invite member. Please try again.');
+      toast.error('Failed to invite member. Please try again.');
     }
   };
 
@@ -459,11 +467,36 @@ const updateTaskFilters = (updates) => {
         <hr className="border-gray-300 dark:border-gray-700 mb-4" />
 
         {/* User and Company Info */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm sm:text-base">
+            {/* User and Company Info */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm sm:text-base">
           <div className="flex items-center space-x-2 mb-2 sm:mb-0">
-            <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-              User ID: <span className="text-gray-900 dark:text-white">{userId}</span>
-            </p>
+            {userLoading ? (
+              <p className="font-mono text-gray-500 dark:text-gray-400">Loading user...</p>
+            ) : userError ? (
+              <p className="font-mono text-red-500 dark:text-red-400">Error loading user</p>
+            ) : userData?.data ? (
+              <div className="flex flex-row justify-center content-center gap-3">
+                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
+                  User: <span className="text-gray-900 dark:text-white">{userData.data.email || userData.data.name || 'Current User'}</span>
+                </p>
+                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
+                  User ID: <span className="text-gray-900 dark:text-white">{userData.data.full_name}</span>
+                </p>
+              </div>
+            ) : currentUser ? (
+              <div className="flex flex-col space-y-1">
+                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
+                  User: <span className="text-gray-900 dark:text-white">{currentUser.email || currentUser.name || 'Current User'}</span>
+                </p>
+                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
+                  User ID: <span className="text-gray-900 dark:text-white">{currentUser.id}</span>
+                </p>
+              </div>
+            ) : (
+              <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
+                User ID: <span className="text-gray-900 dark:text-white">{userId}</span>
+              </p>
+            )}
             <button onClick={handleCopyUserId} className="text-blue-500 hover:text-blue-700 focus:outline-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
