@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
@@ -8,13 +9,10 @@ import Home from './pages/Home';
 import TaskManager from './components/TaskManager';
 import EmailVerification from './components/EmailVerification';
 import AcceptInvitation from './pages/AcceptInvitation';
-// Add to your routes
 import TeamJoinedSuccess from './components/TeamJoinedSuccess';
-
-// In your routes configuration:
+import ProtectedRoute from './components/ProtectedRoute'; // Add this import
 
 function App() {
-
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -23,7 +21,17 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/auth/verify/:token" element={<EmailVerification />} />
           <Route path="/invite/accept/:token" element={<AcceptInvitation />} />
-          <Route path="/taskManager" element={<TaskManager />} />
+          
+          {/* Protected TaskManager route */}
+          <Route 
+            path="/taskManager" 
+            element={
+              <ProtectedRoute>
+                <TaskManager />
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route path="/team-joined" element={<TeamJoinedSuccess />} />
         </Routes>
         {/* <Footer /> */}

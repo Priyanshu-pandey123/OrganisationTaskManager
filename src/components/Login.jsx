@@ -19,7 +19,6 @@ const Login = ({ onToggleForm }) => {
     skip: !localStorage.getItem('auth_token'), // Skip if no token
   });
 
-  // Get invitation data from navigation state
   const invitedEmail = location.state?.invitedEmail;
   const invitationToken = location.state?.invitationToken;
   const isInvitationFlow = !!invitationToken;
@@ -98,51 +97,55 @@ const Login = ({ onToggleForm }) => {
   };
 
   // Effect to handle invitation acceptance after profile is fetched
-  useEffect(() => {
-    if (isInvitationFlow && profileData && !isProfileLoading) {
-      const handleInvitationAcceptance = async () => {
-        try {
-          if (profileError) {
-            throw new Error('Failed to fetch user profile');
-          }
-
-          // Use user_id from the profile API response
-          const userId = profileData?.data?.user_id;
-
-          if (!userId) {
-            throw new Error('User ID not found in profile');
-          }
-
-          // Accept the invitation using the user_id from profile
-          await acceptInvitationPost({
-            token: invitationToken,
-            user_id: userId
-          }).unwrap();
-
-          toast.success('Login successful! Welcome to the team.');
-          
-          // Clear invitation token and redirect to success page
-          localStorage.removeItem('invite_token');
-          navigate('/team-joined', { replace: true });
-        } catch (inviteError) {
-          // Handle invitation acceptance error
-          const errorMsg = inviteError?.data?.message || inviteError?.message || 'Login successful, but failed to accept invitation.';
-          
-          if (errorMsg.includes('email does not match')) {
-            setInvitationError('Invitation email does not match your account. Please use the correct account.');
-            // Don't redirect - let user try again
-            return;
-          } else {
-            toast.error(errorMsg);
-            navigate('/taskManager');
-          }
+// In Login.jsx - lines 101-144
+useEffect(() => {
+  if (isInvitationFlow ) {
+    const handleInvitationAcceptance = async () => {
+      try {
+        if (profileError) {
+          throw new Error('Failed to fetch user profile');
         }
-      };
 
-      handleInvitationAcceptance();
-    }
-  }, [isInvitationFlow, profileData, isProfileLoading, profileError, invitationToken, navigate, acceptInvitationPost]);
+        // Use user_id from the profile API response
+        const userId = profileData?.data?.user_id;
 
+        if (!userId) {
+          throw new Error('User ID not found in profile');
+        }
+
+        // Accept the invitation using the user_id from profile
+        await acceptInvitationPost({
+          token: invitationToken,
+          user_id: userId
+        }).unwrap();
+
+
+        toast.success('Login successful! Welcome to the team.');
+        
+        // Clear invitation token and redirect to success page
+    
+        navigate('/team-joined', { replace: true });
+      } catch (inviteError) {
+
+        console.log(inviteError);
+        localStorage.removeItem('invite_token');
+        // Handle invitation acceptance error
+        const errorMsg = inviteError?.data?.message || inviteError?.message || 'Login successful, but failed to accept invitation.';
+        
+        if (errorMsg.includes('email does not match')) {
+          setInvitationError('Invitation email does not match your account. Please use the correct account.');
+          // Don't redirect - let user try again
+          return;
+        } else {
+          toast.error(errorMsg);
+          navigate('/taskManager');
+        }
+      }
+    };
+
+    handleInvitationAcceptance();
+  }
+}, [isInvitationFlow, profileData, isProfileLoading, profileError, invitationToken, navigate, acceptInvitationPost]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">

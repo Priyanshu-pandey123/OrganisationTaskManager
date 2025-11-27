@@ -234,13 +234,15 @@ const updateTaskFilters = (updates) => {
       
       await createTeam(teamData).unwrap();
       
+      toast.success('Team created successfully!');
       // Clear the input and refetch teams
       setNewTeamName('');
       refetchTeams(); // Refresh the teams list
+
       
     } catch (error) {
       console.error('Failed to create team:', error);
-      alert('Failed to create team. Please try again.');
+      toast.error(error?.data?.message || 'Failed to create team. Please try again.');
     }
   };
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInvitationValidation } from '../hooks/useInvitation';
+import { useMeQuery, useAcceptInvitationPostMutation } from '../store/apiSlice';
 import { toast } from 'react-toastify';
 
 const AcceptInvitation = () => {
@@ -9,6 +10,14 @@ const AcceptInvitation = () => {
   const [invitationProcessed, setInvitationProcessed] = useState(false);
 
   const { invitedEmail, userExists, validationError, isValidating, isValidated, validationFailed } = useInvitationValidation(token);
+  
+  // Check if user is already authenticated when userExists is true
+  const isAuthenticated = !!localStorage.getItem('auth_token');
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(undefined, {
+    skip: !isAuthenticated || !userExists || invitationProcessed,
+  });
+  
+  const [acceptInvitationPost] = useAcceptInvitationPostMutation();
 
   useEffect(() => {
     // Save token to localStorage immediately if token exists
@@ -19,7 +28,37 @@ const AcceptInvitation = () => {
     if (isValidated && !invitationProcessed) {
       setInvitationProcessed(true);
       
-      // Redirect based on user existence
+      // If user exists and is already authenticated, auto-accept invitation
+      if (userExists === true && isAuthenticated && !isProfileLoading) {
+        if (profileError) {
+          toast.error('Failed to fetch user profile. Please login again.');
+          navigate('/?mode=login', { 
+            state: { invitedEmail, invitationToken: token },
+            replace: true 
+          });
+          return;
+        }
+
+        if (profileData?.data?.user_id) {
+          // Auto-accept invitation for authenticated user
+          acceptInvitationPost({
+            token: token,
+            user_id: profileData.data.user_id
+          }).unwrap()
+          .then(() => {
+            toast.success('Welcome to the team!');
+            navigate('/team-joined', { replace: true });
+          })
+          .catch((error) => {
+            const errorMsg = error?.data?.message || 'Failed to accept invitation.';
+            toast.error(errorMsg);
+            navigate('/taskManager');
+          });
+          return;
+        }
+      }
+      
+      // Redirect based on user existence (existing flow)
       if (userExists === false) {
         // User doesn't exist - redirect to signup with pre-filled email
         navigate('/?mode=signup', { 
@@ -27,7 +66,7 @@ const AcceptInvitation = () => {
           replace: true 
         });
       } else {
-        // User exists - redirect to login with email hint
+        // User exists but not authenticated - redirect to login with email hint
         navigate('/?mode=login', { 
           state: { invitedEmail, invitationToken: token },
           replace: true 
@@ -45,7 +84,21 @@ const AcceptInvitation = () => {
         navigate('/', { replace: true });
       }, 3000);
     }
-  }, [isValidated, validationFailed, userExists, invitedEmail, token, navigate, invitationProcessed, validationError]);
+  }, [
+    isValidated, 
+    validationFailed, 
+    userExists, 
+    invitedEmail, 
+    token, 
+    navigate, 
+    invitationProcessed, 
+    validationError,
+    isAuthenticated,
+    profileData,
+    isProfileLoading,
+    profileError,
+    acceptInvitationPost
+  ]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
