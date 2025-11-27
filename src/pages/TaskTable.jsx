@@ -2,9 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getExpandedRowModel } from '@tanstack/react-table';
 import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users } from 'lucide-react';
 import AssignedUsersModal from '../components/AssignedUsersModal';
-import TaskDetailDrawer from '../components/TaskDetailDrawer'; // Add this import
+import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation } from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery} from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 
 const columnHelper = createColumnHelper();
@@ -13,7 +13,6 @@ const TaskTable = ({ filters }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [expandedRows, setExpandedRows] = useState({});
-    const [subtasks, setSubtasks] = useState({}); // Store subtasks for each task
     const [comments, setComments] = useState({}); // Store comments for each task
     const [subtaskComments, setSubtaskComments] = useState({}); // Store comments for subtasks
     const [showSubtaskForm, setShowSubtaskForm] = useState(null);
@@ -26,8 +25,13 @@ const TaskTable = ({ filters }) => {
     const [newSubtaskAssignees, setNewSubtaskAssignees] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
+    // const [activeSubtaskQueries, setActiveSubtaskQueries] = useState(new Map()); // Removed to fix infinite re-render
+    
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
+    const [subtasksData, setSubtasksData] = useState({}); // Store fetched subtasks
     const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
+
+    
     // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -41,27 +45,87 @@ const TaskTable = ({ filters }) => {
     });
 
     // Use user ID from either currentUser or the fetched userData
-    const userId = currentUser?.data?.user_id ;
-    console.log(currentUser, 'from the redux');
-    console.log(userData, 'from me API');
-
+    const userId = currentUser?.data?.user_id;
+    
     // Fetch tasks using the API with the user ID
     const { data: apiResponse, isLoading: isTasksLoading, error: tasksError, refetch } = useGetTasksQuery(userId, {
         skip: !userId, // Skip the query if user ID is not available
     });
-    
-    // console.log(apiResponse, 'from the api response');
 
+    
     // Extract tasks from API response
     const tasks = apiResponse?.data?.tasks || [];
-
-    // Log filters to show which query would be used
+    const expandedTaskIds = useMemo(() => 
+        Object.keys(expandedRows).filter(taskId => expandedRows[taskId]), 
+        [expandedRows]
+    );
+    console.log("EXPANDED TASK IDS ==========>", expandedTaskIds);
+    // Fetch subtasks for expanded tasks
+    // Since we can't call hooks in a loop, we'll use a different approach
+   
+    // Effect to manage subtask queries when expanded tasks change
+    // This effect is causing an infinite re-render because 'activeSubtaskQueries' is a dependency
+    // and it is updated inside the effect. The cleanup logic is also mutating the map directly.
+    // Since we are only using 'primaryExpandedTaskId' for fetching, we can remove this complex logic
+    // or refactor it to only depend on 'expandedTaskIds' and use the functional update form of setState.
+    // However, since the code below only uses 'primaryExpandedTaskId', we will comment out this complex
+    // logic for now as it seems to be an incomplete attempt at a more complex solution.
+    // The simplified logic below handles the single expanded task.
+    /*
     useEffect(() => {
-        // console.log('Current task filters:', filters);
-        // console.log('API Response:', apiResponse);
-        // console.log('Tasks:', tasks);
-    }, [filters, apiResponse, tasks]);
-    
+        setActiveSubtaskQueries(prevQueries => {
+            const newQueries = new Map(prevQueries);
+            
+            // 1. Add new expanded tasks
+            expandedTaskIds.forEach(taskId => {
+                if (taskId && !newQueries.has(taskId)) {
+                    // Placeholder for a new query
+                    newQueries.set(taskId, { loading: true });
+                }
+            });
+            
+            // 2. Remove tasks that are no longer expanded
+            newQueries.forEach((_, taskId) => {
+                if (!expandedTaskIds.includes(taskId)) {
+                    newQueries.delete(taskId);
+                }
+            });
+            
+            // Only update state if the map has actually changed
+            // This is still complex because Map comparison is tricky.
+            // For now, we'll rely on the simpler logic below.
+            return newQueries;
+        });
+    }, [expandedTaskIds]);
+    */
+
+    // For now, let's simplify and fetch subtasks one at a time
+    // You can expand this to handle multiple concurrent queries if needed
+    const primaryExpandedTaskId = expandedTaskIds.length > 0 ? expandedTaskIds[0] : null;
+    const { data: primarySubtaskData, isLoading: isPrimarySubtaskLoading, error: primarySubtaskError } = useGetSubtaskByParamsQuery(primaryExpandedTaskId, {
+        skip: !primaryExpandedTaskId,
+    });
+
+    // Update subtasks data when the primary query completes
+    useEffect(() => {
+        if (primarySubtaskData?.data?.subtasks && primaryExpandedTaskId) {
+            setSubtasksData(prev => ({
+                ...prev,
+                [primaryExpandedTaskId]: primarySubtaskData.data.subtasks
+            }));
+        }
+    }, [primarySubtaskData, primaryExpandedTaskId]);
+    // Log filters to show which query would be used
+    // Log current state
+    useEffect(() => {
+        console.log('Current task filters:', filters);
+        console.log('API Response:', apiResponse);
+        console.log('Tasks:', tasks);
+        console.log('Expanded Tasks:', expandedTaskIds);
+        console.log('Primary expanded task ID:', primaryExpandedTaskId);
+        console.log('Primary subtask data:', primarySubtaskData);
+        console.log('Subtasks:', subtasksData);
+    }, [filters, apiResponse, tasks, expandedTaskIds, primaryExpandedTaskId, primarySubtaskData, subtasksData]);
     const handleViewUsers = (users) => {
         setSelectedUsers(users);
         setIsModalOpen(true);
@@ -85,31 +149,35 @@ const TaskTable = ({ filters }) => {
 
     const handleCreateSubtask = async (taskId) => {
         if (newSubtaskName.trim()) {
-            const newSubtask = {
-                id: Date.now().toString(),
-                task_id: taskId,
-                subtask_name: newSubtaskName.trim(),
-                description: newSubtaskDescription.trim(),
-                status: 'todo',
-                priority: 'medium',
-                due_date: newSubtaskDueDate || null,
-                assignees: newSubtaskAssignees,
-                created_at: new Date().toISOString(),
-                assigned_users: newSubtaskAssignees 
-            };
-            
-            await createSubtask(newSubtask).unwrap();
-            setSubtasks(prev => ({
-                ...prev,
-                [taskId]: [...(prev[taskId] || []), newSubtask]
-            }));
-            
-            // Reset form
-            setNewSubtaskName('');
-            setNewSubtaskDescription('');
-            setNewSubtaskDueDate('');
-            setNewSubtaskAssignees([]);
-            setShowSubtaskForm(null);
+            try {
+                const subtaskData = {
+                    task_id: taskId,
+                    subtask_name: newSubtaskName.trim(),
+                    description: newSubtaskDescription.trim(),
+                    status: 'todo',
+                    due_date: newSubtaskDueDate || null,
+                    assignees: newSubtaskAssignees.map(user => user.user_id), // Send only user IDs
+                };
+                
+                await createSubtask(subtaskData).unwrap();
+                
+                // Reset form
+                setNewSubtaskName('');
+                setNewSubtaskDescription('');
+                setNewSubtaskDueDate('');
+                setNewSubtaskAssignees([]);
+                setShowSubtaskForm(null);
+                
+                // Refetch subtasks for this task if it's expanded
+                if (expandedRows[taskId]) {
+                    const query = subtaskQueries[taskId];
+                    if (query) {
+                        query.refetch();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to create subtask:', error);
+            }
         }
     };
 
@@ -124,35 +192,13 @@ const TaskTable = ({ filters }) => {
         });
     };
 
-    const handleDeleteSubtask = (taskId, subtaskId) => {
-        setSubtasks(prev => ({
-            ...prev,
-            [taskId]: prev[taskId].filter(subtask => subtask.id !== subtaskId)
-        }));
-    };
-
-    const handleAssignUsersToSubtask = (taskId, subtaskId) => {
-        const updatedSubtasks = subtasks[taskId].map(subtask => 
-            subtask.id === subtaskId 
-                ? { ...subtask, assigned_users: selectedUsersForSubtask }
-                : subtask
-        );
-        
-        setSubtasks(prev => ({
-            ...prev,
-            [taskId]: updatedSubtasks
-        }));
-        setShowSubtaskAssignForm(null);
-        setSelectedUsersForSubtask([]);
-    };
-
     const handleAddComment = (taskId) => {
         if (newComment.trim()) {
             const comment = {
                 id: Date.now().toString(),
                 text: newComment.trim(),
                 created_at: new Date().toISOString(),
-                author: currentUser?.full_name || currentUser?.name || 'Current User' // Updated to use currentUser
+                author: currentUser?.full_name || currentUser?.name || 'Current User'
             };
             
             setComments(prev => ({
@@ -170,7 +216,7 @@ const TaskTable = ({ filters }) => {
                 id: Date.now().toString(),
                 text: newSubtaskComment.trim(),
                 created_at: new Date().toISOString(),
-                author: currentUser?.full_name || currentUser?.name || 'Current User' // Updated to use currentUser
+                author: currentUser?.full_name || currentUser?.name || 'Current User'
             };
             
             setSubtaskComments(prev => ({
@@ -186,19 +232,6 @@ const TaskTable = ({ filters }) => {
         setExpandedRows(prev => ({
             ...prev,
             [taskId]: !prev[taskId]
-        }));
-    };
-
-    const toggleSubtaskStatus = (taskId, subtaskId) => {
-        const updatedSubtasks = subtasks[taskId].map(subtask => 
-            subtask.id === subtaskId 
-                ? { ...subtask, status: subtask.status === 'completed' ? 'todo' : 'completed' }
-                : subtask
-        );
-        
-        setSubtasks(prev => ({
-            ...prev,
-            [taskId]: updatedSubtasks
         }));
     };
 
@@ -284,7 +317,7 @@ const TaskTable = ({ filters }) => {
                         <MessageSquare className="w-4 h-4" />
                     </button>
                     <span className="text-xs text-gray-500">
-                        {subtasks[row.original.task_id]?.length || 0} subtasks, {comments[row.original.task_id]?.length || 0} comments
+                        {subtasksData[row.original.task_id]?.length || 0} subtasks, {comments[row.original.task_id]?.length || 0} comments
                     </span>
                 </div>
             ),
@@ -302,7 +335,7 @@ const TaskTable = ({ filters }) => {
             ),
             enableSorting: false,
         }),
-    ], [expandedRows, subtasks, comments]);
+    ], [expandedRows, subtasksData, comments]);
 
     const table = useReactTable({
         data: tasks,
@@ -352,43 +385,30 @@ const TaskTable = ({ filters }) => {
         );
     }
 
-    // // No user authenticated
-    // if (!currentUser?.) {
-    //     return (
-    //         <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
-    //             <div className="text-center">
-    //                 <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-    //                 <h2 className="text-xl font-semibold text-gray-300 mb-2">Authentication Required</h2>
-    //                 <p className="text-gray-400">Please log in to view your tasks.</p>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
     return (
         <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-indigo-400">My Task</h2>
-              <div className='flex gap-3'>
-              <button
-                    onClick={() => refetch()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
-                >
-                    Assigned To Mex
-                </button>
-                <button
-                    onClick={() => refetch()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
-                >
-                    Assigned By Me
-                </button>
-              <button
-                    onClick={() => refetch()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
-                >
-                    Refresh
-                </button>
-              </div>
+                <h2 className="text-3xl font-bold text-indigo-400">My Tasks</h2>
+                <div className='flex gap-3'>
+                    <button
+                        onClick={() => refetch()}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                    >
+                        Assigned To Me
+                    </button>
+                    <button
+                        onClick={() => refetch()}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                    >
+                        Assigned By Me
+                    </button>
+                    <button
+                        onClick={() => refetch()}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                    >
+                        Refresh
+                    </button>
+                </div>
             </div>
             
             {tasks.length === 0 ? (
@@ -523,10 +543,10 @@ const TaskTable = ({ filters }) => {
                                                     <div className="flex space-x-3 pt-2">
                                                         <button
                                                             onClick={() => handleCreateSubtask(row.original.task_id)}
-                                                            disabled={!newSubtaskName.trim()}
+                                                            disabled={!newSubtaskName.trim() || isCreatingSubtask}
                                                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded transition"
                                                         >
-                                                            Create Subtask
+                                                            {isCreatingSubtask ? 'Creating...' : 'Create Subtask'}
                                                         </button>
                                                         <button
                                                             onClick={() => {
@@ -581,89 +601,83 @@ const TaskTable = ({ filters }) => {
                                             <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
                                                 <div className="space-y-4">
                                                     {/* Subtasks */}
-                                                    {subtasks[row.original.task_id]?.length > 0 && (
+                                                    {subtasksData[row.original.task_id]?.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Subtasks:</h4>
+                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center">
+                                                                <ListTodo className="w-4 h-4 mr-2" />
+                                                                Subtasks ({subtasksData[row.original.task_id].length})
+                                                            </h4>
                                                             <div className="space-y-3 ml-4">
-                                                                {subtasks[row.original.task_id].map((subtask) => (
-                                                                    <div key={subtask.id} className="border border-gray-600 rounded-lg p-3 bg-gray-700">
-                                                                        <div className="flex items-start justify-between mb-2">
-                                                                            <div className="flex items-center space-x-2 flex-1">
-                                                                                <button
-                                                                                    onClick={() => toggleSubtaskStatus(row.original.task_id, subtask.id)}
-                                                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                                                                        subtask.status === 'completed' 
-                                                                                            ? 'bg-green-500 border-green-500' 
-                                                                                            : 'border-gray-400'
-                                                                                    }`}
-                                                                                >
+                                                                {subtasksData[row.original.task_id].map((subtask) => (
+                                                                    <div key={subtask.subtask_id} className="border border-gray-600 rounded-lg p-4 bg-gray-700 hover:bg-gray-650 transition">
+                                                                        <div className="flex items-start justify-between mb-3">
+                                                                            <div className="flex items-center space-x-3 flex-1">
+                                                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                                                                    subtask.status === 'completed' 
+                                                                                        ? 'bg-green-500 border-green-500' 
+                                                                                        : 'border-gray-400'
+                                                                                }`}>
                                                                                     {subtask.status === 'completed' && (
                                                                                         <CheckCircle className="w-3 h-3 text-white" />
                                                                                     )}
-                                                                                </button>
-                                                                                <span className={`text-sm ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-300'}`}>
-                                                                                    {subtask.subtask_name || subtask.name}
-                                                                                </span>
+                                                                                </div>
+                                                                                <div className="flex-1">
+                                                                                    <span className={`text-sm font-medium ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-200'}`}>
+                                                                                        {subtask.subtask_name}
+                                                                                    </span>
+                                                                                    {subtask.creator && (
+                                                                                        <div className="text-xs text-gray-400 mt-1">
+                                                                                            Created by {subtask.creator.full_name}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex items-center space-x-1">
+                                                                            <div className="flex items-center space-x-2">
                                                                                 <button
-                                                                                    onClick={() => setShowSubtaskAssignForm(subtask.id)}
-                                                                                    className="p-1 text-blue-400 hover:text-blue-300 transition"
-                                                                                    title="Assign Users"
-                                                                                >
-                                                                                    <Users className="w-4 h-4" />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => setShowSubtaskCommentForm(subtask.id)}
-                                                                                    className="p-1 text-green-400 hover:text-green-300 transition"
+                                                                                    onClick={() => setShowSubtaskCommentForm(subtask.subtask_id)}
+                                                                                    className="p-1.5 text-green-400 hover:text-green-300 transition rounded hover:bg-gray-600"
                                                                                     title="Add Comment"
                                                                                 >
                                                                                     <MessageSquare className="w-4 h-4" />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handleDeleteSubtask(row.original.task_id, subtask.id)}
-                                                                                    className="p-1 text-red-400 hover:text-red-300 transition"
-                                                                                    title="Delete Subtask"
-                                                                                >
-                                                                                    <Trash2 className="w-4 h-4" />
                                                                                 </button>
                                                                             </div>
                                                                         </div>
                                                                         
                                                                         {/* Subtask Description */}
                                                                         {subtask.description && (
-                                                                            <div className="mb-2 text-xs text-gray-400">
+                                                                            <div className="mb-3 text-sm text-gray-400 bg-gray-600 rounded p-2">
                                                                                 {subtask.description}
                                                                             </div>
                                                                         )}
 
                                                                         {/* Subtask Due Date */}
                                                                         {subtask.due_date && (
-                                                                            <div className="mb-2 text-xs text-gray-400">
-                                                                                <Calendar className="w-3 h-3 inline-block mr-1" />
+                                                                            <div className="mb-2 flex items-center text-xs text-gray-400">
+                                                                                <Calendar className="w-3 h-3 mr-1" />
                                                                                 Due: {formatDueDate(subtask.due_date)}
                                                                             </div>
                                                                         )}
                                                                         
-                                                                        {/* Subtask Users */}
-                                                                        {subtask.assigned_users?.length > 0 && (
+                                                                        {/* Subtask Assignees */}
+                                                                        {subtask.assignees?.length > 0 && (
                                                                             <div className="mb-2">
                                                                                 <button
-                                                                                    onClick={() => handleViewSubtaskUsers(subtask.assigned_users)}
-                                                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                                                    onClick={() => handleViewSubtaskUsers(subtask.assignees)}
+                                                                                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center"
                                                                                 >
-                                                                                    {subtask.assigned_users.length} assigned user{subtask.assigned_users.length !== 1 ? 's' : ''}
+                                                                                    <Users className="w-3 h-3 mr-1" />
+                                                                                    {subtask.assignees.length} assigned user{subtask.assignees.length !== 1 ? 's' : ''}
                                                                                 </button>
                                                                             </div>
                                                                         )}
 
                                                                         {/* Subtask Comments */}
-                                                                        {subtaskComments[subtask.id]?.length > 0 && (
-                                                                            <div className="space-y-1 mt-2">
-                                                                                <div className="text-xs text-gray-400 mb-1">Comments:</div>
-                                                                                {subtaskComments[subtask.id].map((comment) => (
-                                                                                    <div key={comment.id} className="bg-gray-600 rounded p-2">
-                                                                                        <div className="flex items-center space-x-2 mb-1">
+                                                                        {subtaskComments[subtask.subtask_id]?.length > 0 && (
+                                                                            <div className="space-y-2 mt-3">
+                                                                                <div className="text-xs text-gray-400 mb-2">Comments:</div>
+                                                                                {subtaskComments[subtask.subtask_id].map((comment) => (
+                                                                                    <div key={comment.id} className="bg-gray-600 rounded p-3">
+                                                                                        <div className="flex items-center space-x-2 mb-2">
                                                                                             <span className="text-xs font-medium text-gray-300">{comment.author}</span>
                                                                                             <span className="text-xs text-gray-500">
                                                                                                 {new Date(comment.created_at).toLocaleString()}
@@ -676,72 +690,25 @@ const TaskTable = ({ filters }) => {
                                                                         )}
 
                                                                         {/* Subtask Comment Form */}
-                                                                        {showSubtaskCommentForm === subtask.id && (
-                                                                            <div className="mt-2 space-y-2">
+                                                                        {showSubtaskCommentForm === subtask.subtask_id && (
+                                                                            <div className="mt-3 space-y-2 border-t border-gray-600 pt-3">
                                                                                 <textarea
                                                                                     value={newSubtaskComment}
                                                                                     onChange={(e) => setNewSubtaskComment(e.target.value)}
                                                                                     placeholder="Add a comment to this subtask..."
                                                                                     rows={2}
-                                                                                    className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 text-xs resize-none"
+                                                                                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 text-sm resize-none"
                                                                                 />
                                                                                 <div className="flex space-x-2">
                                                                                     <button
-                                                                                        onClick={() => handleAddSubtaskComment(row.original.task_id, subtask.id)}
-                                                                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition"
+                                                                                        onClick={() => handleAddSubtaskComment(row.original.task_id, subtask.subtask_id)}
+                                                                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm transition"
                                                                                     >
                                                                                         Add Comment
                                                                                     </button>
                                                                                     <button
                                                                                         onClick={() => setShowSubtaskCommentForm(null)}
-                                                                                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition"
-                                                                                    >
-                                                                                        Cancel
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Subtask User Assignment Form */}
-                                                                        {showSubtaskAssignForm === subtask.id && (
-                                                                            <div className="mt-2 space-y-2">
-                                                                                <div className="text-xs text-gray-300 mb-1">Assign users to this subtask:</div>
-                                                                                {/* You can replace this with a proper user selection component */}
-                                                                                <div className="flex flex-wrap gap-1">
-                                                                                    {row.original.assigned_users.map((user) => (
-                                                                                        <button
-                                                                                            key={user.user_id}
-                                                                                            onClick={() => {
-                                                                                                const isSelected = selectedUsersForSubtask.some(u => u.user_id === user.user_id);
-                                                                                                if (isSelected) {
-                                                                                                setSelectedUsersForSubtask(prev => prev.filter(u => u.user_id !== user.user_id));
-                                                                                                } else {
-                                                                                                    setSelectedUsersForSubtask(prev => [...prev, user]);
-                                                                                                }
-                                                                                            }}
-                                                                                            className={`px-2 py-1 rounded text-xs ${
-                                                                                                selectedUsersForSubtask.some(u => u.user_id === user.user_id)
-                                                                                                    ? 'bg-blue-600 text-white'
-                                                                                                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                                                                                            }`}
-                                                                                        >
-                                                                                            {user.full_name}
-                                                                                        </button>
-                                                                                    ))}
-                                                                                </div>
-                                                                                <div className="flex space-x-2">
-                                                                                    <button
-                                                                                        onClick={() => handleAssignUsersToSubtask(row.original.task_id, subtask.id)}
-                                                                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition"
-                                                                                    >
-                                                                                        Assign
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            setShowSubtaskAssignForm(null);
-                                                                                            setSelectedUsersForSubtask([]);
-                                                                                        }}
-                                                                                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition"
+                                                                                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm transition"
                                                                                     >
                                                                                         Cancel
                                                                                     </button>
@@ -757,10 +724,13 @@ const TaskTable = ({ filters }) => {
                                                     {/* Task Comments */}
                                                     {comments[row.original.task_id]?.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Task Comments:</h4>
+                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center">
+                                                                <MessageSquare className="w-4 h-4 mr-2" />
+                                                                Task Comments ({comments[row.original.task_id].length})
+                                                            </h4>
                                                             <div className="space-y-2 ml-4">
                                                                 {comments[row.original.task_id].map((comment) => (
-                                                                    <div key={comment.id} className="p-3 bg-gray-700 rounded">
+                                                                    <div key={comment.id} className="p-3 bg-gray-700 rounded-lg border border-gray-600">
                                                                         <div className="flex items-center space-x-2 mb-1">
                                                                             <span className="text-xs font-medium text-gray-400">{comment.author}</span>
                                                                             <span className="text-xs text-gray-500">
@@ -774,8 +744,11 @@ const TaskTable = ({ filters }) => {
                                                         </div>
                                                     )}
 
-                                                    {(!subtasks[row.original.task_id]?.length && !comments[row.original.task_id]?.length) && (
-                                                        <p className="text-sm text-gray-500 italic">No subtasks or comments yet.</p>
+                                                    {(!subtasksData[row.original.task_id]?.length && !comments[row.original.task_id]?.length) && (
+                                                        <p className="text-sm text-gray-500 italic flex items-center">
+                                                            <ListTodo className="w-4 h-4 mr-2" />
+                                                            No subtasks or comments yet. Click the + button to add a subtask.
+                                                        </p>
                                                     )}
                                                 </div>
                                             </td>
@@ -799,7 +772,7 @@ const TaskTable = ({ filters }) => {
                 isOpen={isDrawerOpen}
                 onClose={handleCloseDrawer}
                 task={selectedTask}
-                subtasks={subtasks}
+                subtasks={subtasksData}
                 comments={comments}
                 subtaskComments={subtaskComments}
                 onViewUsers={handleViewUsers}
