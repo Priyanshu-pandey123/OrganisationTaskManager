@@ -38,7 +38,22 @@ export const apiSlice = createApi({
     }),
     
     getTasks: builder.query({
-      query: (user_id) => `/v1/task?user_id=${user_id}`,
+      query: (params) => {
+        // Handle both old userId parameter and new filters object
+        if (typeof params === 'string' || typeof params === 'number') {
+          // Backward compatibility for userId only
+          return `/v1/task?user_id=${params}`;
+        }
+        
+        // Build query string from filters object
+        const queryParams = new URLSearchParams();
+        
+        if (params.user_id) queryParams.append('user_id', params.user_id);
+        if (params.type) queryParams.append('type', params.type);
+        
+        const queryString = queryParams.toString();
+        return `/v1/task${queryString ? `?${queryString}` : ''}`;
+      },
     }),
 
     getTeamsByOrganisationId: builder.query({

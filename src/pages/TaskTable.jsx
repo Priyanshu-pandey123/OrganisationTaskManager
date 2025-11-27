@@ -59,8 +59,19 @@ const TaskTable = ({ filters }) => {
     // Use user ID from either currentUser or the fetched userData
     const userId = currentUser?.data?.user_id;
     
-    // Fetch tasks using the API with the user ID
-    const { data: apiResponse, isLoading: isTasksLoading, error: tasksError, refetch } = useGetTasksQuery(userId, {
+    // Add filter state
+    const [filterType, setFilterType] = useState('my_tasks');
+
+    // Build filter object for API call
+    const currentFilters = useMemo(() => {
+        return {
+            user_id: userId,
+            type: filterType,
+        };
+    }, [userId, filterType]);
+
+    // Update the tasks query to use filters
+    const { data: apiResponse, isLoading: isTasksLoading, error: tasksError, refetch } = useGetTasksQuery(currentFilters, {
         skip: !userId, // Skip the query if user ID is not available
     });
 
@@ -444,22 +455,46 @@ const TaskTable = ({ filters }) => {
         );
     }
 
+    // Filter change handlers
+    const handleFilterTypeChange = (type) => {
+        setFilterType(type);
+        // The query will automatically refetch when filterType changes due to the useMemo dependency
+    };
+
     return (
         <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-indigo-400">My Tasks</h2>
                 <div className='flex gap-3'>
                     <button
-                        onClick={() => refetch()}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                        onClick={() => handleFilterTypeChange('assigned_to_me')}
+                        className={`px-4 py-2 rounded transition ${
+                            filterType === 'assigned_to_me' 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
                     >
                         Assigned To Me
                     </button>
                     <button
-                        onClick={() => refetch()}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
+                        onClick={() => handleFilterTypeChange('assigned_by_me')}
+                        className={`px-4 py-2 rounded transition ${
+                            filterType === 'assigned_by_me' 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
                     >
                         Assigned By Me
+                    </button>
+                    <button
+                        onClick={() => handleFilterTypeChange('my_tasks')}
+                        className={`px-4 py-2 rounded transition ${
+                            filterType === 'my_tasks' 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                    >
+                        My Tasks
                     </button>
                     <button
                         onClick={() => refetch()}
@@ -468,6 +503,15 @@ const TaskTable = ({ filters }) => {
                         Refresh
                     </button>
                 </div>
+            </div>
+
+            {/* Show current filter indicator */}
+            <div className="mb-4 text-sm text-gray-400">
+                Showing: <span className="text-indigo-400 font-medium">
+                    {filterType === 'my_tasks' ? 'My Tasks' : 
+                     filterType === 'assigned_to_me' ? 'Assigned To Me' : 
+                     filterType === 'assigned_by_me' ? 'Assigned By Me' : 'All Tasks'}
+                </span>
             </div>
             
             {tasks.length === 0 ? (
