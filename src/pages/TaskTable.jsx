@@ -5,7 +5,7 @@ import AssignedUsersModal from '../components/AssignedUsersModal';
 import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import CreateSubtaskModal from '../components/CreateSubtaskModal'; // Add this import
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskMutation } from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 import { toast } from 'react-toastify';
 
@@ -38,8 +38,8 @@ const TaskTable = ({ filters }) => {
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
     const [subtasksData, setSubtasksData] = useState({}); // Store fetched subtasks
     const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
-    const [updateTask, { isLoading: isUpdatingTask }] = useUpdateTaskMutation();
-
+    const [updateTask, { isLoading: isUpdatingTask }] = useUpdateTaskStatusMutation();
+    const [updateTaskStatus, { isLoading: isUpdatingTaskStatus }] = useUpdateTaskStatusMutation();      
     
     // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -190,7 +190,7 @@ const TaskTable = ({ filters }) => {
     const handleStatusChange = async (taskId, newStatus) => {
         try {
             // Update the task status
-            await updateTask({
+            await updateTaskStatus({
                 task_id: taskId,
                 status: newStatus
             }).unwrap();
