@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getExpandedRowModel } from '@tanstack/react-table';
-import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users } from 'lucide-react';
+import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowUp, ArrowDown, Plus, MessageSquare, ChevronRight, ChevronDown, Trash2, Users, Edit } from 'lucide-react';
 import AssignedUsersModal from '../components/AssignedUsersModal';
 import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import CreateSubtaskModal from '../components/CreateSubtaskModal'; // Add this import
+import EditTaskDrawer from '../components/EditTaskDrawer';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
 import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
@@ -44,7 +45,9 @@ const TaskTable = ({ filters }) => {
     // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
-
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedTaskForEdit, setSelectedTaskForEdit] = useState(null);
+    
     // Get current user from user slice
     const currentUser = useCurrentUser();
     
@@ -236,6 +239,23 @@ const TaskTable = ({ filters }) => {
         }
     };
 
+    // Handle opening edit drawer
+    const handleOpenEditDrawer = (task) => {
+        setSelectedTaskForEdit(task);
+        setIsEditDrawerOpen(true);
+    };
+
+    // Handle closing edit drawer
+    const handleCloseEditDrawer = () => {
+        setIsEditDrawerOpen(false);
+        setSelectedTaskForEdit(null);
+    };
+
+    // Handle successful task update
+    const handleTaskUpdateSuccess = () => {
+        refetch(); // Refetch tasks to show updated data
+    };
+
     const columns = useMemo(() => [
         columnHelper.display({
             id: 'expander',
@@ -334,6 +354,13 @@ const TaskTable = ({ filters }) => {
             header: () => 'Actions',
             cell: ({ row }) => (
                 <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => handleOpenEditDrawer(row.original)} // Add edit button
+                        className="p-1 text-blue-400 hover:text-blue-300 transition"
+                        title="Edit Task"
+                    >
+                        <Edit className="w-4 h-4" />
+                    </button>
                     <button
                         onClick={() => handleOpenSubtaskModal(row.original)} // Updated this line
                         className="p-1 text-indigo-400 hover:text-indigo-300 transition"
@@ -694,10 +721,12 @@ const TaskTable = ({ filters }) => {
                 </div>
             )}
             
-            <AssignedUsersModal
-                isOpen={isModalOpen}
-                setIsOpen={setIsModalOpen}
-                users={selectedUsers}
+            {/* Add the EditTaskDrawer */}
+            <EditTaskDrawer
+                isOpen={isEditDrawerOpen}
+                onClose={handleCloseEditDrawer}
+                task={selectedTaskForEdit}
+                onUpdateSuccess={handleTaskUpdateSuccess}
             />
 
             {/* Add the CreateSubtaskModal */}
@@ -707,6 +736,13 @@ const TaskTable = ({ filters }) => {
                 task={selectedTaskForSubtask}
                 onCreateSubtask={handleCreateSubtask}
                 isCreating={isCreatingSubtask}
+            />
+
+            {/* Assigned Users Modal */}
+            <AssignedUsersModal
+                isOpen={isModalOpen}
+                setIsOpen={setIsModalOpen}
+                users={selectedUsers}
             />
 
             {/* Task Detail Drawer */}

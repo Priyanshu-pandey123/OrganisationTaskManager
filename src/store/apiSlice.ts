@@ -142,6 +142,13 @@ export const apiSlice = createApi({
       },
     }),
   }),
+  updateTask: builder.mutation({
+    query: ({ task_id, ...taskData }) => ({
+      url: `/v1/task/update-task/${task_id}`,
+      method: 'PUT',
+      body: taskData,
+    }),
+  }),
   
   }),
 });
@@ -164,5 +171,6 @@ export const {
   useGetTaskQuery,
   useCreateSubtaskMutation,
   useGetSubtaskByParamsQuery,
-  useUpdateTaskStatusMutation
+  useUpdateTaskStatusMutation,
+  useUpdateTaskMutation
 } = apiSlice;
