@@ -61,14 +61,7 @@ export const apiSlice = createApi({
         body: task,
       }),
     }),
-    
-    updateTask: builder.mutation({
-      query: ({ id, ...updates }) => ({
-        url: `/tasks/${id}`,
-        method: 'PATCH',
-        body: updates,
-      }),
-    }),
+
     
     deleteTask: builder.mutation({
       query: (id) => ({
@@ -140,6 +133,15 @@ export const apiSlice = createApi({
       return `/v1/subtask/${task_id}`;
     },
   }),
+  updateTask: builder.mutation({
+    query: ({ task_id, status }) => ({
+      url: `/v1/task/update-status/${task_id}`,
+      method: 'PUT',
+      body: {
+        status: status
+      },
+    }),
+  }),
   
   }),
 });
@@ -151,7 +153,6 @@ export const {
   useVerifyEmailQuery,
   useGetTasksQuery,
   useCreateTaskMutation,
-  useUpdateTaskMutation,
   useDeleteTaskMutation,
   useGetCompaniesQuery,
   useCreateTeamMutation,
@@ -162,5 +163,6 @@ export const {
   useAcceptInvitationPostMutation,
   useGetTaskQuery,
   useCreateSubtaskMutation,
-  useGetSubtaskByParamsQuery
+  useGetSubtaskByParamsQuery,
+  useUpdateTaskMutation
 } = apiSlice;

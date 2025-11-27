@@ -5,8 +5,9 @@ import AssignedUsersModal from '../components/AssignedUsersModal';
 import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import CreateSubtaskModal from '../components/CreateSubtaskModal'; // Add this import
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery} from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskMutation } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
+import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper();
 
@@ -37,6 +38,7 @@ const TaskTable = ({ filters }) => {
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
     const [subtasksData, setSubtasksData] = useState({}); // Store fetched subtasks
     const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
+    const [updateTask, { isLoading: isUpdatingTask }] = useUpdateTaskMutation();
 
     
     // Drawer state
@@ -117,18 +119,18 @@ const TaskTable = ({ filters }) => {
     // Update the create subtask handler
     const handleCreateSubtask = async (subtaskData) => {
         try {
-            await createSubtask(subtaskData).unwrap();
-            
-            // Refetch subtasks for this task if it's expanded
+                await createSubtask(subtaskData).unwrap();
+                
+                // Refetch subtasks for this task if it's expanded
             if (expandedRows[subtaskData.task_id]) {
                 const query = subtaskQueries[subtaskData.task_id];
-                if (query) {
-                    query.refetch();
+                    if (query) {
+                        query.refetch();
+                    }
                 }
+            } catch (error) {
+                console.error('Failed to create subtask:', error);
             }
-        } catch (error) {
-            console.error('Failed to create subtask:', error);
-        }
     };
 
     // Add handler for opening subtask modal
@@ -184,6 +186,56 @@ const TaskTable = ({ filters }) => {
         }));
     };
 
+    // Update the status change handler with proper toast notifications
+    const handleStatusChange = async (taskId, newStatus) => {
+        try {
+            // Update the task status
+            await updateTask({
+                task_id: taskId,
+                status: newStatus
+            }).unwrap();
+            
+            // Show success notification
+            toast.success(`Task status updated to ${newStatus.replace('_', ' ')} successfully!`, {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+            });
+            
+            // Explicitly refetch all tasks to show the latest updated task with new status
+            console.log('Task status updated successfully, refetching all tasks...');
+            await refetch();
+            
+            console.log('Tasks refetched successfully with updated status');
+        } catch (error) {
+            // Show error notification
+            toast.error('Failed to update task status. Please try again.', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+            });
+            
+            console.error('Failed to update task status:', error);
+            
+            // Even on error, we might want to refetch to ensure data consistency
+            try {
+                await refetch();
+            } catch (refetchError) {
+                console.error('Failed to refetch tasks after error:', refetchError);
+            }
+        }
+    };
+
     const columns = useMemo(() => [
         columnHelper.display({
             id: 'expander',
@@ -220,15 +272,46 @@ const TaskTable = ({ filters }) => {
                 </div>
             ),
         }),
-        columnHelper.accessor('status', {
-            header: () => 'Status',
-            cell: info => (
-                <div className={`flex items-center space-x-2 ${getStatusIcon(info.getValue()).color}`}>
-                    {React.createElement(getStatusIcon(info.getValue()).icon, { className: 'w-4 h-4' })}
-                    <span className="capitalize">{info.getValue().replace('_', ' ')}</span>
-                </div>
-            ),
-        }),
+        columnHelper.accessor("status", {
+            header: () => "Status",
+            cell: ({ row }) => {
+              const task = row.original;
+              const currentStatus = task.status;
+          
+              const statusOptions = [
+                { value: "todo", label: "Todo" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "done", label: "Done" },
+              ];
+          
+              const statusColors = {
+                todo: "bg-gray-700 text-gray-300 border border-gray-500",
+                in_progress: "bg-yellow-500 text-black border border-yellow-600",
+                done: "bg-green-600 text-white border border-green-700",
+              };
+          
+              return (
+                <select
+                    value={currentStatus}
+                    onChange={(e) => handleStatusChange(task.task_id, e.target.value)}
+                    disabled={isUpdatingTask}
+                    className={`px-3 py-1 rounded text-sm focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${statusColors[currentStatus]}`}
+                >
+                    {statusOptions.map((option) => (
+                        <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-gray-800 text-white"
+                        >
+                            {isUpdatingTask ? `${option.label} (Updating...)` : option.label}
+                        </option>
+                    ))}
+                </select>
+            );
+        },
+    }),
+          
+          
         columnHelper.accessor('priority', {
             header: () => 'Priority',
             cell: info => (
@@ -284,7 +367,7 @@ const TaskTable = ({ filters }) => {
             ),
             enableSorting: false,
         }),
-    ], [expandedRows, subtasksData, comments]);
+    ], [expandedRows, subtasksData, comments, isUpdatingTask]);
 
     const table = useReactTable({
         data: tasks,
