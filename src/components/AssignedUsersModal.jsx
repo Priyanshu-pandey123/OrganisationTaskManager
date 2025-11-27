@@ -31,8 +31,8 @@ const AssignedUsersModal = ({ isOpen, setIsOpen, users }) => {
                                     <Mail className="w-3 h-3 mr-1" />
                                     {user.email}
                                 </p>
-                                <span className={`text-xs font-mono mt-1 inline-block ${user.TaskAssignment.can_edit ? 'text-green-400' : 'text-red-400'}`}>
-                                    {user.TaskAssignment.can_edit ? 'Can Edit' : 'Read Only'}
+                                <span className={`text-xs font-mono mt-1 inline-block ${user.TaskAssignment?.can_edit ? 'text-green-400' : 'text-red-400'}`}>
+                                    {user.TaskAssignment?.can_edit ? 'Can Edit' : 'Read Only'}
                                 </span>
                             </div>
                         </li>

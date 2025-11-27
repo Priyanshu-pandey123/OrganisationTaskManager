@@ -60,47 +60,7 @@ const TaskTable = ({ filters }) => {
         [expandedRows]
     );
     console.log("EXPANDED TASK IDS ==========>", expandedTaskIds);
-    // Fetch subtasks for expanded tasks
-    // Since we can't call hooks in a loop, we'll use a different approach
    
-    // Effect to manage subtask queries when expanded tasks change
-    // This effect is causing an infinite re-render because 'activeSubtaskQueries' is a dependency
-    // and it is updated inside the effect. The cleanup logic is also mutating the map directly.
-    // Since we are only using 'primaryExpandedTaskId' for fetching, we can remove this complex logic
-    // or refactor it to only depend on 'expandedTaskIds' and use the functional update form of setState.
-    // However, since the code below only uses 'primaryExpandedTaskId', we will comment out this complex
-    // logic for now as it seems to be an incomplete attempt at a more complex solution.
-    // The simplified logic below handles the single expanded task.
-    /*
-    useEffect(() => {
-        setActiveSubtaskQueries(prevQueries => {
-            const newQueries = new Map(prevQueries);
-            
-            // 1. Add new expanded tasks
-            expandedTaskIds.forEach(taskId => {
-                if (taskId && !newQueries.has(taskId)) {
-                    // Placeholder for a new query
-                    newQueries.set(taskId, { loading: true });
-                }
-            });
-            
-            // 2. Remove tasks that are no longer expanded
-            newQueries.forEach((_, taskId) => {
-                if (!expandedTaskIds.includes(taskId)) {
-                    newQueries.delete(taskId);
-                }
-            });
-            
-            // Only update state if the map has actually changed
-            // This is still complex because Map comparison is tricky.
-            // For now, we'll rely on the simpler logic below.
-            return newQueries;
-        });
-    }, [expandedTaskIds]);
-    */
-
-    // For now, let's simplify and fetch subtasks one at a time
-    // You can expand this to handle multiple concurrent queries if needed
     const primaryExpandedTaskId = expandedTaskIds.length > 0 ? expandedTaskIds[0] : null;
     const { data: primarySubtaskData, isLoading: isPrimarySubtaskLoading, error: primarySubtaskError } = useGetSubtaskByParamsQuery(primaryExpandedTaskId, {
         skip: !primaryExpandedTaskId,
