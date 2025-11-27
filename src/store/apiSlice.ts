@@ -127,6 +127,18 @@ export const apiSlice = createApi({
         },
       }),
     }),
+  createSubtask: builder.mutation({
+    query: (subtask) => ({
+      url: '/v1/subtask/create-subtask',
+      method: 'POST',
+      body: subtask,
+    }),
+  }),
+  getSubtaskByParams: builder.query({
+    query: (task_id) => {
+      return `/v1/subtask/${task_id}`;
+    },
+  }),
   }),
 });
 export const {
@@ -146,6 +158,7 @@ export const {
   useAcceptInvitationQuery,
   useGetMemberOfTeamAndOrgQuery,
   useAcceptInvitationPostMutation,
-  useGetTaskQuery
-  
+  useGetTaskQuery,
+  useCreateSubtaskMutation,
+  useGetSubtaskByParamsQuery
 } = apiSlice;

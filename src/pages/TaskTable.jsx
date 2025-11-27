@@ -4,7 +4,7 @@ import { CheckCircle, Clock, ListTodo, UserPlus, Calendar, AlertTriangle, ArrowU
 import AssignedUsersModal from '../components/AssignedUsersModal';
 import TaskDetailDrawer from '../components/TaskDetailDrawer'; // Add this import
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery } from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 
 const columnHelper = createColumnHelper();
@@ -27,7 +27,7 @@ const TaskTable = ({ filters }) => {
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
-    
+    const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
     // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -83,7 +83,7 @@ const TaskTable = ({ filters }) => {
         setSelectedTask(null);
     };
 
-    const handleCreateSubtask = (taskId) => {
+    const handleCreateSubtask = async (taskId) => {
         if (newSubtaskName.trim()) {
             const newSubtask = {
                 id: Date.now().toString(),
@@ -95,9 +95,10 @@ const TaskTable = ({ filters }) => {
                 due_date: newSubtaskDueDate || null,
                 assignees: newSubtaskAssignees,
                 created_at: new Date().toISOString(),
-                assigned_users: newSubtaskAssignees // Keep for backward compatibility
+                assigned_users: newSubtaskAssignees 
             };
             
+            await createSubtask(newSubtask).unwrap();
             setSubtasks(prev => ({
                 ...prev,
                 [taskId]: [...(prev[taskId] || []), newSubtask]
@@ -373,7 +374,7 @@ const TaskTable = ({ filters }) => {
                     onClick={() => refetch()}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition"
                 >
-                    Assigned To Me
+                    Assigned To Mex
                 </button>
                 <button
                     onClick={() => refetch()}
