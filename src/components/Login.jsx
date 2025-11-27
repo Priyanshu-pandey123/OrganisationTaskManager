@@ -14,11 +14,18 @@ const Login = ({ onToggleForm }) => {
   const [acceptInvitationPost] = useAcceptInvitationPostMutation();
   const { acceptInvite, isAccepting, acceptError } = useAcceptInvitation();
   
-  // Always fetch user profile when token is available (this will update the user slice automatically)
-  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(undefined, {
-    skip: !localStorage.getItem('auth_token'), // Skip if no token
+  // State to track if we should fetch profile after login
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+  
+  // Fetch user profile when shouldFetchProfile is true
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(authToken, {
+    skip: !shouldFetchProfile || !authToken,
   });
 
+  console.log(profileData);
+
+  // Get invitation data from navigation state
   const invitedEmail = location.state?.invitedEmail;
   const invitationToken = location.state?.invitationToken;
   const isInvitationFlow = !!invitationToken;
@@ -80,15 +87,16 @@ const Login = ({ onToggleForm }) => {
         token: result.token,
       }));
 
-      if (!isInvitationFlow) {
+      // If this is an invitation flow, trigger profile fetch
+      if (isInvitationFlow) {
+        setAuthToken(result.token);
+        setShouldFetchProfile(true);
+      } else {
         toast.success('Login successful! Welcome back.');
         navigate("/taskManager");
-      } else {
-        // For invitation flow, handle invitation acceptance
-        // The me query will automatically fetch user data when token is available
-        // We'll handle the invitation acceptance in the useEffect below
       }
     } catch (error) {
+      localStorage.removeItem('invite_token');
       // Handle login failure
       const errorMessage = error?.data?.message || 'Login failed. Please try again.';
       dispatch(loginFailure(errorMessage));
@@ -97,55 +105,56 @@ const Login = ({ onToggleForm }) => {
   };
 
   // Effect to handle invitation acceptance after profile is fetched
-// In Login.jsx - lines 101-144
-useEffect(() => {
-  if (isInvitationFlow ) {
-    const handleInvitationAcceptance = async () => {
-      try {
-        if (profileError) {
-          throw new Error('Failed to fetch user profile');
+  useEffect(() => {
+    if (shouldFetchProfile && profileData && !isProfileLoading) {
+      console.log('inside invitation acceptance');
+      const handleInvitationAcceptance = async () => {
+        try {
+          if (profileError) {
+            throw new Error('Failed to fetch user profile');
+          }
+
+          // Use user_id from the profile API response
+          const userId = profileData?.data?.user_id;
+
+          if (!userId) {
+            throw new Error('User ID not found in profile');
+          }
+
+          // Accept the invitation using the user_id from profile
+          await acceptInvitationPost({
+            token: invitationToken,
+            user_id: userId
+          }).unwrap();
+
+          toast.success('Login successful! Welcome to the team.');
+          
+          // Clear invitation token and redirect to success page
+          localStorage.removeItem('invite_token');
+          navigate('/team-joined', { replace: true });
+        } catch (inviteError) {
+          // Handle invitation acceptance error
+          localStorage.removeItem('invite_token');
+          const errorMsg = inviteError?.data?.message || inviteError?.message || 'Login successful, but failed to accept invitation.';
+          
+          if (errorMsg.includes('email does not match')) {
+            setInvitationError('Invitation email does not match your account. Please use the correct account.');
+            // Don't redirect - let user try again
+            return;
+          } else {
+            toast.error(errorMsg);
+            navigate('/taskManager');
+          }
+        } finally {
+          // Reset state
+          setShouldFetchProfile(false);
+          setAuthToken(null);
         }
+      };
 
-        // Use user_id from the profile API response
-        const userId = profileData?.data?.user_id;
-
-        if (!userId) {
-          throw new Error('User ID not found in profile');
-        }
-
-        // Accept the invitation using the user_id from profile
-        await acceptInvitationPost({
-          token: invitationToken,
-          user_id: userId
-        }).unwrap();
-
-
-        toast.success('Login successful! Welcome to the team.');
-        
-        // Clear invitation token and redirect to success page
-    
-        navigate('/team-joined', { replace: true });
-      } catch (inviteError) {
-
-        console.log(inviteError);
-        localStorage.removeItem('invite_token');
-        // Handle invitation acceptance error
-        const errorMsg = inviteError?.data?.message || inviteError?.message || 'Login successful, but failed to accept invitation.';
-        
-        if (errorMsg.includes('email does not match')) {
-          setInvitationError('Invitation email does not match your account. Please use the correct account.');
-          // Don't redirect - let user try again
-          return;
-        } else {
-          toast.error(errorMsg);
-          navigate('/taskManager');
-        }
-      }
-    };
-
-    handleInvitationAcceptance();
-  }
-}, [isInvitationFlow, profileData, isProfileLoading, profileError, invitationToken, navigate, acceptInvitationPost]);
+      handleInvitationAcceptance();
+    }
+  }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate, acceptInvitationPost]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
@@ -257,14 +266,14 @@ useEffect(() => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading || isAccepting || isProfileLoading}
+                disabled={isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white transition duration-150 ease-in-out ${
-                  isLoading || isAccepting || isProfileLoading
+                  isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)
                     ? 'bg-indigo-400 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                 }`}
               >
-                {(isLoading || isAccepting || isProfileLoading) ? (
+                {(isLoading || isAccepting || (shouldFetchProfile && isProfileLoading)) ? (
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"

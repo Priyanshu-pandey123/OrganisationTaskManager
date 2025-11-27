@@ -121,7 +121,10 @@ export const apiSlice = createApi({
       query: ({ token, user_id }) => ({
         url: `/v1/invitation/accept`,
         method: 'POST',
-        body: task,
+        body: {
+          token: token,
+          user_id: user_id
+        },
       }),
     }),
   }),
