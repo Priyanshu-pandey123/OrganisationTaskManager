@@ -164,7 +164,23 @@ export const apiSlice = createApi({
       body: taskData,
     }),
   }),
-  
+  updateSubtask: builder.mutation({
+    query: ({ subtask_id, ...subtaskData }) => ({
+      url: `/v1/subtask/update-subtask/${subtask_id}`,
+      method: 'PUT',
+      body: subtaskData,
+    }),
+  }),
+  createSubTaskComment: builder.mutation({
+    query: ({ subtask_id, reply_text }) => ({
+      url: '/v1/subtask/subtask-reply',
+      method: 'POST',
+      body: {
+        subtask_id,
+        reply_text
+      },
+    }),
+  }),
   }),
 });
 export const {
@@ -187,5 +203,7 @@ export const {
   useCreateSubtaskMutation,
   useGetSubtaskByParamsQuery,
   useUpdateTaskStatusMutation,
-  useUpdateTaskMutation
+  useUpdateTaskMutation,
+  useUpdateSubtaskMutation  ,
+  useCreateSubTaskCommentMutation
 } = apiSlice;

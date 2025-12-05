@@ -9,7 +9,7 @@ import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper'
 import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation } from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 import { toast } from 'react-toastify';
-
+import EditSubtaskModal from '../components/EditSubtaskModal'; 
 const columnHelper = createColumnHelper();
 
 const TaskTable = ({ filters }) => {
@@ -26,12 +26,11 @@ const TaskTable = ({ filters }) => {
     const [showSubtaskModal, setShowSubtaskModal] = useState(false);
     const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState(null);
     
-    // Remove these states as they're now handled in the modal:
-    // const [newSubtaskName, setNewSubtaskName] = useState('');
-    // const [newSubtaskDescription, setNewSubtaskDescription] = useState('');
-    // const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
-    // const [newSubtaskAssignees, setNewSubtaskAssignees] = useState([]);
-
+        // Edit subtask modal states
+        const [showEditSubtaskModal, setShowEditSubtaskModal] = useState(false);
+        const [selectedSubtaskForEdit, setSelectedSubtaskForEdit] = useState(null);
+      
+ 
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
     // const [activeSubtaskQueries, setActiveSubtaskQueries] = useState(new Map()); // Removed to fix infinite re-render
@@ -262,10 +261,28 @@ const TaskTable = ({ filters }) => {
         setSelectedTaskForEdit(null);
     };
 
-    // Handle successful task update
-    const handleTaskUpdateSuccess = () => {
-        refetch(); // Refetch tasks to show updated data
-    };
+   
+        // Handle successful task update
+        const handleTaskUpdateSuccess = () => {
+            refetch(); // Refetch tasks to show updated data
+        };
+    
+        // Handle opening edit subtask modal
+        const handleOpenEditSubtaskModal = (subtask, task) => {
+            setSelectedSubtaskForEdit({ subtask, task });
+            setShowEditSubtaskModal(true);
+        };
+    
+        // Handle closing edit subtask modal
+        const handleCloseEditSubtaskModal = () => {
+            setShowEditSubtaskModal(false);
+            setSelectedSubtaskForEdit(null);
+        };
+    
+        // Handle successful subtask update
+        const handleSubtaskUpdateSuccess = () => {
+            refetch(); // Refetch tasks to show updated subtasks
+        };
 
     const columns = useMemo(() => [
         columnHelper.display({
@@ -360,7 +377,21 @@ const TaskTable = ({ filters }) => {
                 </div>
             ),
         }),
-        columnHelper.display({
+     
+        columnHelper.accessor('assigned_users', {
+            header: () => 'Assigned Users',
+            cell: info => (
+                <button
+                    onClick={() => handleViewUsers(info.getValue())}
+                    className="flex items-center text-sm font-medium text-indigo-400 hover:text-indigo-300 transition duration-150"
+                >
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    {info.getValue().length} User{info.getValue().length !== 1 ? 's' : ''}
+                </button>
+            ),
+            enableSorting: false,
+        }),
+           columnHelper.display({
             id: 'actions',
             header: () => 'Actions',
             cell: ({ row }) => (
@@ -377,9 +408,9 @@ const TaskTable = ({ filters }) => {
                         className="p-1 text-indigo-400 hover:text-indigo-300 transition"
                         title="Add Subtask"
                     >
-                        <Plus className="w-4 h-4" />
+                        <div><Plus className="w-4 h-4" />  </div>
                     </button>
-                    <button
+                    {/* <button
                         onClick={() => setShowCommentForm(row.original.task_id)}
                         className="p-1 text-green-400 hover:text-green-300 transition"
                         title="Add Comment"
@@ -388,22 +419,9 @@ const TaskTable = ({ filters }) => {
                     </button>
                     <span className="text-xs text-gray-500">
                         {subtasksData[row.original.task_id]?.length || 0} subtasks, {comments[row.original.task_id]?.length || 0} comments
-                    </span>
+                    </span> */}
                 </div>
             ),
-        }),
-        columnHelper.accessor('assigned_users', {
-            header: () => 'Assigned Users',
-            cell: info => (
-                <button
-                    onClick={() => handleViewUsers(info.getValue())}
-                    className="flex items-center text-sm font-medium text-indigo-400 hover:text-indigo-300 transition duration-150"
-                >
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    {info.getValue().length} User{info.getValue().length !== 1 ? 's' : ''}
-                </button>
-            ),
-            enableSorting: false,
         }),
     ], [expandedRows, subtasksData, comments, isUpdatingTask]);
 
@@ -459,6 +477,12 @@ const TaskTable = ({ filters }) => {
     const handleFilterTypeChange = (type) => {
         setFilterType(type);
         // The query will automatically refetch when filterType changes due to the useMemo dependency
+    };
+
+    // Add a helper function to format dates
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleString();
     };
 
     return (
@@ -602,8 +626,8 @@ const TaskTable = ({ filters }) => {
                                     {/* Expanded Content */}
                                     {expandedRows[row.original.task_id] && (
                                         <tr>
-                                            <td colSpan={columns.length} className="px-6 py-4 bg-gray-750">
-                                                <div className="space-y-4">
+                                            <td colSpan={columns.length} className="px-6 py-4 bg-gray-750 max-h-[500px] overflow-y-auto">
+                                                <div className="space-y-4 max-h-[500px] overflow-y-scroll">
                                                     {/* Subtasks */}
                                                     {subtasksData[row.original.task_id]?.length > 0 && (
                                                         <div>
@@ -613,30 +637,75 @@ const TaskTable = ({ filters }) => {
                                                             </h4>
                                                             <div className="space-y-3 ml-4">
                                                                 {subtasksData[row.original.task_id].map((subtask) => (
-                                                                    <div key={subtask.subtask_id} className="border border-gray-600 rounded-lg p-4 bg-gray-700 hover:bg-gray-650 transition">
+                                                                    <div key={subtask.subtask_id || subtask.id} className="border border-gray-600 rounded-lg p-4 bg-gray-700 hover:bg-gray-650 transition">
                                                                         <div className="flex items-start justify-between mb-3">
                                                                             <div className="flex items-center space-x-3 flex-1">
+                                                                                {/* Status Indicator */}
                                                                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                                                                                     subtask.status === 'completed' 
                                                                                         ? 'bg-green-500 border-green-500' 
+                                                                                        : subtask.status === 'in_progress'
+                                                                                        ? 'bg-yellow-500 border-yellow-500'
                                                                                         : 'border-gray-400'
                                                                                 }`}>
                                                                                     {subtask.status === 'completed' && (
                                                                                         <CheckCircle className="w-3 h-3 text-white" />
                                                                                     )}
-                                                                                </div>
-                                                                                <div className="flex-1">
-                                                                                    <span className={`text-sm font-medium ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-200'}`}>
-                                                                                        {subtask.subtask_name}
-                                                                                    </span>
-                                                                                    {subtask.creator && (
-                                                                                        <div className="text-xs text-gray-400 mt-1">
-                                                                                            Created by {subtask.creator.full_name}
-                                                                                        </div>
+                                                                                    {subtask.status === 'in_progress' && (
+                                                                                        <Clock className="w-3 h-3 text-black" />
                                                                                     )}
                                                                                 </div>
+                                                                                
+                                                                                <div className="flex-1">
+                                                                                    {/* Subtask Name */}
+                                                                                    <div className="flex items-center space-x-2 mb-1">
+                                                                                        <span className={`text-sm font-medium ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-200'}`}>
+                                                                                            {subtask.subtask_name}
+                                                                                        </span>
+                                                                                        {subtask.is_deleted && (
+                                                                                            <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded">
+                                                                                                Deleted
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    
+                                                                                    {/* Subtask Meta Information */}
+                                                                                    <div className="text-xs flex items-center justify-between `gap-2 text-gray-400">
+                                                                                        {/* <div>ID: {subtask.subtask_id}</div> */}
+                                                                                    <div className="flex items-center justify-start gap-2">
+                                                                                        <div className="text-xs text-white-800">Created: {formatDateTime(subtask.created_at)}</div>
+                                                                                        <div className="text-xs text-white-900">Updated: {formatDateTime(subtask.updated_at)}</div>
+                                                                                    </div>
+                                                                                        <div className="flex items-center justify-end">
+                                                                         
+                                                                             <div className="mb-2">
+                                                                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                                                                                subtask.status === 'completed' 
+                                                                                    ? 'bg-green-600 text-white' 
+                                                                                    : subtask.status === 'todo'
+                                                                                    ? 'bg-yellow-500 text-black'
+                                                                                    : 'bg-gray-600 text-gray-300'
+                                                                            }`}>
+                                                                                Status: {subtask.status?.replace('_', ' ').toUpperCase() || 'TODO'}
+                                                                            </span>
+                                                                        </div>
+                                                                        
+                                                                     </div>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
+                                                                            
+                                                                            {/* Action Buttons */
+                                                                            }
                                                                             <div className="flex items-center space-x-2">
+                                                                          
+                                                                               <button
+                                                                                    onClick={() => handleOpenEditSubtaskModal(subtask, row.original)} // Add edit button
+                                                                                    className="p-1.5 text-blue-400 hover:text-blue-300 transition rounded hover:bg-gray-600"
+                                                                                    title="Edit Subtask"
+                                                                                >
+                                                                                    <Edit className="w-4 h-4" />
+                                                                                </button>
                                                                                 <button
                                                                                     onClick={() => setShowSubtaskCommentForm(subtask.subtask_id)}
                                                                                     className="p-1.5 text-green-400 hover:text-green-300 transition rounded hover:bg-gray-600"
@@ -649,27 +718,33 @@ const TaskTable = ({ filters }) => {
                                                                         
                                                                         {/* Subtask Description */}
                                                                         {subtask.description && (
-                                                                            <div className="mb-3 text-sm text-gray-400 bg-gray-600 rounded p-2">
-                                                                                {subtask.description}
+                                                                            <div className="mb-3 text-sm text-gray-300 bg-gray-600 rounded p-3">
+                                                                                <strong className="text-gray-400">Description:</strong>
+                                                                                <div className="mt-1">{subtask.description}</div>
                                                                             </div>
                                                                         )}
 
                                                                         {/* Subtask Due Date */}
                                                                         {subtask.due_date && (
                                                                             <div className="mb-2 flex items-center text-xs text-gray-400">
-                                                                                <Calendar className="w-3 h-3 mr-1" />
-                                                                                Due: {formatDueDate(subtask.due_date)}
+                                                                                <Calendar className="w-3 h-3 mr-1 text-red-400" />
+                                                                                <strong className="text-gray-500 mr-1">Due:</strong> 
+                                                                                {formatDueDate(subtask.due_date)}
                                                                             </div>
                                                                         )}
                                                                         
+                                                             
                                                                         {/* Subtask Assignees */}
                                                                         {subtask.assignees?.length > 0 && (
                                                                             <div className="mb-2">
+                                                                                <div className="text-xs text-gray-400 mb-1">
+                                                                                    <Users className="w-3 h-3 inline-block mr-1" />
+                                                                                    <strong>Assigned Users:</strong>
+                                                                                </div>
                                                                                 <button
                                                                                     onClick={() => handleViewSubtaskUsers(subtask.assignees)}
                                                                                     className="text-xs text-blue-400 hover:text-blue-300 flex items-center"
                                                                                 >
-                                                                                    <Users className="w-3 h-3 mr-1" />
                                                                                     {subtask.assignees.length} assigned user{subtask.assignees.length !== 1 ? 's' : ''}
                                                                                 </button>
                                                                             </div>
@@ -678,7 +753,10 @@ const TaskTable = ({ filters }) => {
                                                                         {/* Subtask Comments */}
                                                                         {subtaskComments[subtask.subtask_id]?.length > 0 && (
                                                                             <div className="space-y-2 mt-3">
-                                                                                <div className="text-xs text-gray-400 mb-2">Comments:</div>
+                                                                                <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                                                                    <MessageSquare className="w-3 h-3 mr-1" />
+                                                                                    <strong>Comments ({subtaskComments[subtask.subtask_id].length}):</strong>
+                                                                                </div>
                                                                                 {subtaskComments[subtask.subtask_id].map((comment) => (
                                                                                     <div key={comment.id} className="bg-gray-600 rounded p-3">
                                                                                         <div className="flex items-center space-x-2 mb-2">
@@ -771,6 +849,13 @@ const TaskTable = ({ filters }) => {
                 onClose={handleCloseEditDrawer}
                 task={selectedTaskForEdit}
                 onUpdateSuccess={handleTaskUpdateSuccess}
+            />
+               <EditSubtaskModal
+                isOpen={showEditSubtaskModal}
+                setIsOpen={setShowEditSubtaskModal}
+                subtask={selectedSubtaskForEdit?.subtask}
+                task={selectedSubtaskForEdit?.task}
+                onUpdateSuccess={handleSubtaskUpdateSuccess}
             />
 
             {/* Add the CreateSubtaskModal */}
