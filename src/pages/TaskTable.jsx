@@ -20,16 +20,17 @@ const TaskTable = ({ filters }) => {
     const [subtaskComments, setSubtaskComments] = useState({}); 
     const [showCommentForm, setShowCommentForm] = useState(null);
     const [showSubtaskCommentForm, setShowSubtaskCommentForm] = useState(null);
-    const [visibleSubtaskComments, setVisibleSubtaskComments] = useState(new Set());
+    const [visibleSubtaskComments, setVisibleSubtaskComments] = useState(null); // null or subtask_id
     
 
     const [showSubtaskModal, setShowSubtaskModal] = useState(false);
     const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState(null);
     
 
-        const [showEditSubtaskModal, setShowEditSubtaskModal] = useState(false);
-        const [selectedSubtaskForEdit, setSelectedSubtaskForEdit] = useState(null);
+  const [showEditSubtaskModal, setShowEditSubtaskModal] = useState(false);
+   const [selectedSubtaskForEdit, setSelectedSubtaskForEdit] = useState(null);
       
+
  
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
@@ -80,16 +81,18 @@ const TaskTable = ({ filters }) => {
         Object.keys(expandedRows).filter(taskId => expandedRows[taskId]), 
         [expandedRows]
     );
-    console.log("EXPANDED TASK IDS ==========>", expandedTaskIds);
+
    
     const primaryExpandedTaskId = expandedTaskIds.length > 0 ? expandedTaskIds[0] : null;
     const { data: primarySubtaskData, isLoading: isPrimarySubtaskLoading, error: primarySubtaskError } = useGetSubtaskByParamsQuery(primaryExpandedTaskId, {
         skip: !primaryExpandedTaskId,
     });
-    const visibleSubtaskIds = Array.from(visibleSubtaskComments);
-    const subtaskCommentsQueries = useGetSubTaskCommentsQuery(visibleSubtaskIds.length > 0 ? visibleSubtaskIds[0] : null, {
-        skip: visibleSubtaskIds.length === 0,
+    
+    // Replace with a simple query for the currently visible subtask comments
+    const { data: subtaskCommentsData, isLoading: isLoadingComments, error: commentsError } = useGetSubTaskCommentsQuery(visibleSubtaskComments, {
+        skip: !visibleSubtaskComments,
     });
+    
     // Update subtasks data when the primary query completes
     useEffect(() => {
         if (primarySubtaskData?.data?.subtasks && primaryExpandedTaskId) {
@@ -229,16 +232,10 @@ const TaskTable = ({ filters }) => {
             [taskId]: !prev[taskId]
         }));
     };
+    
+    // Simplify the toggle function
     const toggleSubtaskComments = (subtaskId) => {
-        setVisibleSubtaskComments(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(subtaskId)) {
-                newSet.delete(subtaskId);
-            } else {
-                newSet.add(subtaskId);
-            }
-            return newSet;
-        });
+        setVisibleSubtaskComments(prev => prev === subtaskId ? null : subtaskId);
     };
 
     // Update the status change handler with proper toast notifications
@@ -737,10 +734,10 @@ const TaskTable = ({ filters }) => {
                                                                                 </div>
                                                                             </div>
                                                                             
-                                                                            {/* Action Buttons */
+                                                                            {/* Action Buttons */}
                                                                             }
                                                                             <div className="flex items-center space-x-2">
-                                                                          
+                                                                              
                                                                                <button
                                                                                     onClick={() => handleOpenEditSubtaskModal(subtask, row.original)} // Add edit button
                                                                                     className="p-1.5 text-blue-400 hover:text-blue-300 transition rounded hover:bg-gray-600"
@@ -768,9 +765,13 @@ const TaskTable = ({ filters }) => {
                                                                                 <button
                                                                                     onClick={() => toggleSubtaskComments(subtask.subtask_id)}
                                                                                     className="p-1.5 text-purple-400 hover:text-purple-300 transition rounded hover:bg-gray-600"
-                                                                                    title="View Comments"
+                                                                                    title={visibleSubtaskComments === subtask.subtask_id ? "Hide Comments" : "Show Comments"}
+                                                                                    disabled={isLoadingComments}
                                                                                 >
                                                                                     <MessageSquare className="w-4 h-4" />
+                                                                                    <span className="ml-1 text-xs">
+                                                                                        {isLoadingComments ? 'Loading...' : (visibleSubtaskComments === subtask.subtask_id ? 'Hide Comments' : 'Show Comments')}
+                                                                                    </span>
                                                                                 </button>
                                                                             </div>
                                                                         )}
@@ -802,24 +803,36 @@ const TaskTable = ({ filters }) => {
                                                                             </div>
                                                                         )}
 
-                                                                        {/* Subtask Comments */}
-                                                                        {subtaskComments[subtask.subtask_id]?.length > 0 && (
+                                                                        {/* Subtask Comments - show when this subtask is selected */}
+                                                                        {visibleSubtaskComments === subtask.subtask_id && (
                                                                             <div className="space-y-2 mt-3">
-                                                                                <div className="text-xs text-gray-400 mb-2 flex items-center">
-                                                                                    <MessageSquare className="w-3 h-3 mr-1" />
-                                                                                    <strong>Comments ({subtaskComments[subtask.subtask_id].length}):</strong>
-                                                                                </div>
-                                                                                {subtaskComments[subtask.subtask_id].map((comment) => (
-                                                                                    <div key={comment.id} className="bg-gray-600 rounded p-3">
-                                                                                        <div className="flex items-center space-x-2 mb-2">
-                                                                                            <span className="text-xs font-medium text-gray-300">{comment.author}</span>
-                                                                                            <span className="text-xs text-gray-500">
-                                                                                                {new Date(comment.created_at).toLocaleString()}
-                                                                                            </span>
+                                                                                {isLoadingComments ? (
+                                                                                    <div className="text-xs text-gray-400">Loading comments...</div>
+                                                                                ) : commentsError ? (
+                                                                                    <div className="text-xs text-red-400">Failed to load comments</div>
+                                                                                ) : subtaskCommentsData?.data?.replies?.length > 0 ? (
+                                                                                    <>
+                                                                                        <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                                                                            <MessageSquare className="w-3 h-3 mr-1" />
+                                                                                            <strong>Comments ({subtaskCommentsData.data.replies.length}):</strong>
                                                                                         </div>
-                                                                                        <p className="text-xs text-gray-200">{comment.text}</p>
-                                                                                    </div>
-                                                                                ))}
+                                                                                        {subtaskCommentsData.data.replies.map((reply) => (
+                                                                                            <div key={reply.reply_id} className="bg-gray-600 rounded p-3">
+                                                                                                <div className="flex items-center space-x-2 mb-2">
+                                                                                                    <span className="text-xs font-medium text-gray-300">
+                                                                                                        {reply.user?.full_name || 'Unknown User'}
+                                                                                                    </span>
+                                                                                                    <span className="text-xs text-gray-500">
+                                                                                                        {new Date(reply.created_at).toLocaleString()}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <p className="text-xs text-gray-200">{reply.content}</p>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div className="text-xs text-gray-500">No comments yet.</div>
+                                                                                )}
                                                                             </div>
                                                                         )}
 
