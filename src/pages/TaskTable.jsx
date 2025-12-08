@@ -734,8 +734,7 @@ const TaskTable = ({ filters }) => {
                                                                                 </div>
                                                                             </div>
                                                                             
-                                                                            {/* Action Buttons */}
-                                                                            }
+                                                                        
                                                                             <div className="flex items-center space-x-2">
                                                                               
                                                                                <button
