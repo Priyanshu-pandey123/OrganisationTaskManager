@@ -3,13 +3,14 @@ import { useAcceptInvitationQuery, useAcceptInvitationPostMutation } from '../st
 import { useAppSelector } from '../store/hooks';
 
 export const useInvitationValidation = (token) => {
-  const { data, error, isLoading, isSuccess, isError } = useAcceptInvitationQuery(token, {
-    skip: !token,
-  });
+  const { data, error, isLoading, isSuccess, isError } =
+    useAcceptInvitationQuery(token, {
+      skip: !token,
+    });
 
   return {
-    invitedEmail: data?.invited_email,
-    userExists: data?.exists,
+    invitedEmail: data?.data?.invited_email,
+    userExists: data?.data?.exists,
     validationError: error,
     isValidating: isLoading,
     isValidated: isSuccess,

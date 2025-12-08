@@ -10,7 +10,12 @@ const AcceptInvitation = () => {
   const [invitationProcessed, setInvitationProcessed] = useState(false);
 
   const { invitedEmail, userExists, validationError, isValidating, isValidated, validationFailed } = useInvitationValidation(token);
-  
+  console.log("INVITED EMAIL ==========>", invitedEmail);
+  console.log("USER EXISTS ==========>", userExists);
+  console.log("VALIDATION ERROR ==========>", validationError);
+  console.log("IS VALIDATING ==========>", isValidating);
+  console.log("IS VALIDATED ==========>", isValidated);
+  console.log("VALIDATION FAILED ==========>", validationFailed);
   // Check if user is already authenticated when userExists is true
   const isAuthenticated = !!localStorage.getItem('auth_token');
   const { data: profileData, isLoading: isProfileLoading, error: profileError } = useMeQuery(undefined, {
@@ -30,6 +35,14 @@ const AcceptInvitation = () => {
       
       // If user exists and is already authenticated, auto-accept invitation
       if (userExists === true && isAuthenticated && !isProfileLoading) {
+        console.log("USER EXISTS ==========>", userExists);
+        console.log("IS AUTHENTICATED ==========>", isAuthenticated);
+        console.log("IS PROFILE LOADING ==========>", isProfileLoading);
+        console.log("PROFILE ERROR ==========>", profileError);
+        console.log("PROFILE DATA ==========>", profileData);
+        console.log("TOKEN ==========>", token);
+        console.log("INVITED EMAIL ==========>", invitedEmail);
+        console.log("INVITATION TOKEN ==========>", invitationToken);
         if (profileError) {
           toast.error('Failed to fetch user profile. Please login again.');
           navigate('/?mode=login', { 
@@ -60,6 +73,14 @@ const AcceptInvitation = () => {
       
       // Redirect based on user existence (existing flow)
       if (userExists === false) {
+        console.log("USER EXISTS ==========>", userExists);
+        console.log("IS AUTHENTICATED ==========>", isAuthenticated);
+        console.log("IS PROFILE LOADING ==========>", isProfileLoading);
+        console.log("PROFILE ERROR ==========>", profileError);
+        console.log("PROFILE DATA ==========>", profileData);
+        console.log("TOKEN ==========>", token);
+        console.log("INVITED EMAIL ==========>", invitedEmail);
+        console.log("INVITATION TOKEN ==========>", invitationToken);
         // User doesn't exist - redirect to signup with pre-filled email
         navigate('/?mode=signup', { 
           state: { invitedEmail, invitationToken: token },
