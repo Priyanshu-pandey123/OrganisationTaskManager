@@ -181,7 +181,11 @@ export const apiSlice = createApi({
       },
     }),
   }),
+
+  getSubTaskComments: builder.query({
+    query: (subtask_id) => `/v1/subtask/reply/${subtask_id}`,
   }),
+}),
 });
 export const {
   useCreateOrganisationMutation,
@@ -205,5 +209,6 @@ export const {
   useUpdateTaskStatusMutation,
   useUpdateTaskMutation,
   useUpdateSubtaskMutation  ,
-  useCreateSubTaskCommentMutation
+  useCreateSubTaskCommentMutation,
+  useGetSubTaskCommentsQuery
 } = apiSlice;

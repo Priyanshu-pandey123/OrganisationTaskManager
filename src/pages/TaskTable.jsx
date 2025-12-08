@@ -6,7 +6,7 @@ import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import CreateSubtaskModal from '../components/CreateSubtaskModal'; // Add this import
 import EditTaskDrawer from '../components/EditTaskDrawer';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation } from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation ,useCreateSubTaskCommentMutation,useGetSubTaskCommentsQuery} from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 import { toast } from 'react-toastify';
 import EditSubtaskModal from '../components/EditSubtaskModal'; 
@@ -16,38 +16,37 @@ const TaskTable = ({ filters }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [expandedRows, setExpandedRows] = useState({});
-    const [comments, setComments] = useState({}); // Store comments for each task
-    const [subtaskComments, setSubtaskComments] = useState({}); // Store comments for subtasks
-    // Comment form states (still needed for inline comment forms)
+    const [comments, setComments] = useState({}); 
+    const [subtaskComments, setSubtaskComments] = useState({}); 
     const [showCommentForm, setShowCommentForm] = useState(null);
     const [showSubtaskCommentForm, setShowSubtaskCommentForm] = useState(null);
+    const [visibleSubtaskComments, setVisibleSubtaskComments] = useState(new Set());
     
-    // Subtask modal states
+
     const [showSubtaskModal, setShowSubtaskModal] = useState(false);
     const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState(null);
     
-        // Edit subtask modal states
+
         const [showEditSubtaskModal, setShowEditSubtaskModal] = useState(false);
         const [selectedSubtaskForEdit, setSelectedSubtaskForEdit] = useState(null);
       
  
     const [newComment, setNewComment] = useState('');
     const [newSubtaskComment, setNewSubtaskComment] = useState('');
-    // const [activeSubtaskQueries, setActiveSubtaskQueries] = useState(new Map()); // Removed to fix infinite re-render
-    
+
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
-    const [subtasksData, setSubtasksData] = useState({}); // Store fetched subtasks
+    const [subtasksData, setSubtasksData] = useState({}); 
     const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
     const [updateTask, { isLoading: isUpdatingTask }] = useUpdateTaskStatusMutation();
     const [updateTaskStatus, { isLoading: isUpdatingTaskStatus }] = useUpdateTaskStatusMutation();      
-    
+    const [createSubtaskComment, { isLoading: isCreatingSubtaskComment }] = useCreateSubTaskCommentMutation();
     // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedTaskForEdit, setSelectedTaskForEdit] = useState(null);
     
-    // Get current user from user slice
+
     const currentUser = useCurrentUser();
     
     // Call me API if currentUser is null but we have an auth token
@@ -87,7 +86,10 @@ const TaskTable = ({ filters }) => {
     const { data: primarySubtaskData, isLoading: isPrimarySubtaskLoading, error: primarySubtaskError } = useGetSubtaskByParamsQuery(primaryExpandedTaskId, {
         skip: !primaryExpandedTaskId,
     });
-
+    const visibleSubtaskIds = Array.from(visibleSubtaskComments);
+    const subtaskCommentsQueries = useGetSubTaskCommentsQuery(visibleSubtaskIds.length > 0 ? visibleSubtaskIds[0] : null, {
+        skip: visibleSubtaskIds.length === 0,
+    });
     // Update subtasks data when the primary query completes
     useEffect(() => {
         if (primarySubtaskData?.data?.subtasks && primaryExpandedTaskId) {
@@ -174,29 +176,69 @@ const TaskTable = ({ filters }) => {
         }
     };
 
-    const handleAddSubtaskComment = (taskId, subtaskId) => {
+ 
+    const handleAddSubtaskComment = async (taskId, subtaskId) => {
         if (newSubtaskComment.trim()) {
-            const comment = {
-                id: Date.now().toString(),
-                text: newSubtaskComment.trim(),
-                created_at: new Date().toISOString(),
-                author: currentUser?.full_name || currentUser?.name || 'Current User'
-            };
-            
-            setSubtaskComments(prev => ({
-                ...prev,
-                [subtaskId]: [...(prev[subtaskId] || []), comment]
-            }));
-            setNewSubtaskComment('');
-            setShowSubtaskCommentForm(null);
+            try {
+                // Call the API to create the subtask comment
+                await createSubtaskComment({
+                    subtask_id: subtaskId,
+                    reply_text: newSubtaskComment.trim()
+                }).unwrap();
+                
+                // Show success notification
+                toast.success('Comment added to subtask successfully!', {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored",
+                });
+                
+                // Clear the form and close it
+                setNewSubtaskComment('');
+                setShowSubtaskCommentForm(null);
+                
+                // Optionally refetch subtasks to show the new comment
+                // This would depend on whether your API returns the updated data
+                // refetch(); // Uncomment if needed
+                
+            } catch (error) {
+                // Show error notification
+                toast.error('Failed to add comment to subtask. Please try again.', {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored",
+                });
+                
+                console.error('Failed to add subtask comment:', error);
+            }
         }
     };
-
     const toggleRowExpansion = (taskId) => {
         setExpandedRows(prev => ({
             ...prev,
             [taskId]: !prev[taskId]
         }));
+    };
+    const toggleSubtaskComments = (subtaskId) => {
+        setVisibleSubtaskComments(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(subtaskId)) {
+                newSet.delete(subtaskId);
+            } else {
+                newSet.add(subtaskId);
+            }
+            return newSet;
+        });
     };
 
     // Update the status change handler with proper toast notifications
@@ -706,6 +748,8 @@ const TaskTable = ({ filters }) => {
                                                                                 >
                                                                                     <Edit className="w-4 h-4" />
                                                                                 </button>
+                                                                              
+                                                                              
                                                                                 <button
                                                                                     onClick={() => setShowSubtaskCommentForm(subtask.subtask_id)}
                                                                                     className="p-1.5 text-green-400 hover:text-green-300 transition rounded hover:bg-gray-600"
@@ -721,6 +765,13 @@ const TaskTable = ({ filters }) => {
                                                                             <div className="mb-3 text-sm text-gray-300 bg-gray-600 rounded p-3">
                                                                                 <strong className="text-gray-400">Description:</strong>
                                                                                 <div className="mt-1">{subtask.description}</div>
+                                                                                <button
+                                                                                    onClick={() => toggleSubtaskComments(subtask.subtask_id)}
+                                                                                    className="p-1.5 text-purple-400 hover:text-purple-300 transition rounded hover:bg-gray-600"
+                                                                                    title="View Comments"
+                                                                                >
+                                                                                    <MessageSquare className="w-4 h-4" />
+                                                                                </button>
                                                                             </div>
                                                                         )}
 
@@ -742,11 +793,12 @@ const TaskTable = ({ filters }) => {
                                                                                     <strong>Assigned Users:</strong>
                                                                                 </div>
                                                                                 <button
-                                                                                    onClick={() => handleViewSubtaskUsers(subtask.assignees)}
-                                                                                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center"
-                                                                                >
-                                                                                    {subtask.assignees.length} assigned user{subtask.assignees.length !== 1 ? 's' : ''}
-                                                                                </button>
+                                                                                        onClick={() => handleAddSubtaskComment(row.original.task_id, subtask.subtask_id)}
+                                                                                        disabled={isCreatingSubtaskComment}
+                                                                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded text-sm transition"
+                                                                                    >
+                                                                                        {isCreatingSubtaskComment ? 'Adding...' : 'Add Comment'}
+                                                                                    </button>
                                                                             </div>
                                                                         )}
 
