@@ -5,6 +5,10 @@ import TaskAssignmentDrawer from '../components/TaskAssignmentDrawer';
 import { toast } from 'react-toastify';
 import TaskTable from '../pages/TaskTable';
 import { useAppSelector } from '../store/hooks';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch } from '../store/hooks';
+import { logout } from '../store/slices/authSlice';
+
 const TaskManager = () => {
   const { data: companiesData, isLoading: companiesLoading, error: companiesError, refetch: refetchCompanies } = useGetCompaniesQuery();
    const [companies, setCompanies] = useState([]);
@@ -458,52 +462,132 @@ const updateTaskFilters = (updates) => {
 
   // Update the teams display to use API data
 
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+    setIsProfileDropdownOpen(false);
+  };
+
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.relative')) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
+
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
       <div className="max-w-8xl px-[100px] rounded-xl  bg-gray-100 dark:bg-gray-800 shadow-lg">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-0">Collaborative Task Manager</h1>
-         
-        </div>
-        <hr className="border-gray-300 dark:border-gray-700 mb-4" />
-
-        {/* User and Company Info */}
-            {/* User and Company Info */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm sm:text-base">
-          <div className="flex items-center space-x-2 mb-2 sm:mb-0">
-            {userLoading ? (
-              <p className="font-mono text-gray-500 dark:text-gray-400">Loading user...</p>
-            ) : userError ? (
-              <p className="font-mono text-red-500 dark:text-red-400">Error loading user</p>
-            ) : userData?.data ? (
-              <div className="flex flex-row justify-center content-center gap-3">
-                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-                  User: <span className="text-gray-900 dark:text-white">{userData.data.email || userData.data.name || 'Current User'}</span>
-                </p>
-                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-                  User ID: <span className="text-gray-900 dark:text-white">{userData.data.full_name}</span>
-                </p>
+          
+          {/* User Profile Dropdown - Top Right */}
+          <div className="relative">
+            <button
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="flex items-center space-x-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded-lg transition-colors duration-200"
+            >
+              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               </div>
-            ) : currentUser ? (
-              <div className="flex flex-col space-y-1">
-                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-                  User: <span className="text-gray-900 dark:text-white">{currentUser.email || currentUser.name || 'Current User'}</span>
-                </p>
-                <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-                  User ID: <span className="text-gray-900 dark:text-white">{currentUser.id}</span>
-                </p>
-              </div>
-            ) : (
-              <p className="font-mono text-gray-500 dark:text-gray-400 break-all">
-                User ID: <span className="text-gray-900 dark:text-white">{userId}</span>
-              </p>
-            )}
-            <button onClick={handleCopyUserId} className="text-blue-500 hover:text-blue-700 focus:outline-none">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <svg className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
+
+            {/* Dropdown Menu */}
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  {userLoading ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading user...</p>
+                  ) : userError ? (
+                    <p className="text-sm text-red-500 dark:text-red-400">Error loading user</p>
+                  ) : userData?.data ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {userData.data.email || userData.data.name || 'Current User'}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {userData.data.user_id || userData.data.id}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : currentUser ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {currentUser.email || currentUser.name || 'Current User'}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {currentUser.id}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">User</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {userId}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-2">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -918,7 +1002,6 @@ const updateTaskFilters = (updates) => {
           </div>
         )}
       <TaskTable/>
-      </div>
       <TaskAssignmentDrawer
         isOpen={isTaskDrawerOpen}
         onClose={() => setIsTaskDrawerOpen(false)}
@@ -940,7 +1023,9 @@ const updateTaskFilters = (updates) => {
         </button>
       )}
     </div>
+    </div>  // Add this missing closing div tag for the inner container
   );
+  
 };
 
 export default TaskManager;

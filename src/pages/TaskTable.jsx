@@ -478,7 +478,7 @@ const TaskTable = ({ filters }) => {
     // Loading state
     if (isLoading) {
         return (
-            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+            <div className="p-8  bg-gray-900 text-gray-200 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400 mx-auto mb-4"></div>
                     <h2 className="text-xl font-semibold text-gray-300">
@@ -492,7 +492,7 @@ const TaskTable = ({ filters }) => {
     // Error state
     if (error) {
         return (
-            <div className="p-8 min-h-screen bg-gray-900 text-gray-200 flex items-center justify-center">
+            <div className="p-8  bg-gray-900 text-gray-200 flex items-center justify-center">
                 <div className="text-center">
                     <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
                     <h2 className="text-xl font-semibold text-red-400 mb-2">
@@ -525,7 +525,7 @@ const TaskTable = ({ filters }) => {
     };
 
     return (
-        <div className="p-8 min-h-screen bg-gray-900 text-gray-200">
+        <div className="p-8 h-fit bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-indigo-400">My Tasks</h2>
                 <div className='flex gap-3'>
