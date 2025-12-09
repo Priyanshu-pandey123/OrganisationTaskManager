@@ -695,21 +695,7 @@ const TaskTable = ({ filters }) => {
                                                                         <div className="flex items-start justify-between mb-3">
                                                                             <div className="flex items-center space-x-3 flex-1">
                                                                                 {/* Status Indicator */}
-                                                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                                                                    subtask.status === 'completed'
-                                                                                        ? 'bg-green-500 border-green-500'
-                                                                                        : subtask.status === 'in_progress'
-                                                                                        ? 'bg-yellow-500 border-yellow-500'
-                                                                                        : 'border-gray-400'
-                                                                                }`}>
-                                                                                    {subtask.status === 'completed' && (
-                                                                                        <CheckCircle className="w-3 h-3 text-white" />
-                                                                                    )}
-                                                                                    {subtask.status === 'in_progress' && (
-                                                                                        <Clock className="w-3 h-3 text-black" />
-                                                                                    )}
-                                                                                </div>
-
+                                                                               
                                                                                 <div className="flex-1">
                                                                                        {/* Subtask Meta Information */}
                                                                                     <div className="flex flex-wrap gap-2 mt-1 mb-2">
@@ -775,6 +761,21 @@ const TaskTable = ({ filters }) => {
                                                                             </div>
                                                                             <div className="mt-2">
                                                                                         <div className="flex items-center space-x-2">
+                                                                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                                                                    subtask.status === 'completed'
+                                                                                        ? 'bg-green-500 border-green-500'
+                                                                                        : subtask.status === 'in_progress'
+                                                                                        ? 'bg-yellow-500 border-yellow-500'
+                                                                                        : 'border-gray-400'
+                                                                                }`}>
+                                                                                    {subtask.status === 'completed' && (
+                                                                                        <CheckCircle className="w-3 h-3 text-white" />
+                                                                                    )}
+                                                                                    {subtask.status === 'in_progress' && (
+                                                                                        <Clock className="w-3 h-3 text-black" />
+                                                                                    )}
+                                                                                </div>
+
                                                                                             <span
                                                                                                 className={`
                                                                                                     text-sm font-medium pb-0.5 border-b
