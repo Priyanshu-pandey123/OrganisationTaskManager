@@ -352,10 +352,21 @@ const TaskTable = ({ filters }) => {
             ),
           }),
           
+          columnHelper.accessor('creator.full_name', {
+            header: () => 'Created By',
+            cell: info => (
+              <button
+                onClick={() => handleTaskClick(info.row.original)}
+                className="font-semibold text-white  underline-offset-2 hover:text-cyan-200 hover:decoration-cyan-300 transition duration-150"
+              >
+                {info.getValue()}
+              </button>
+            ),
+          }),
           columnHelper.accessor('description', {
             header: () => 'Description',
             cell: info => (
-              <div className="text-sm text-gray-300 max-w-xs truncate" title={info.getValue()}>
+              <div className="text-sm text-white  max-w-xs truncate" title={info.getValue()}>
                 {info.getValue()}
               </div>
             ),
@@ -770,7 +781,7 @@ const TaskTable = ({ filters }) => {
                                                                                                     ${
                                                                                                     subtask.status === 'completed'
                                                                                                         ? 'line-through text-cyan-800 border-gray-600'
-                                                                                                        : 'text-white border-cyan-500'
+                                                                                                        : 'text-white~ border-cyan-500'
                                                                                                     }
                                                                                                 `}
                                                                                                 >
