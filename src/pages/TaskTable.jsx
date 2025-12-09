@@ -700,46 +700,61 @@ const TaskTable = ({ filters }) => {
                                                                                 </div>
                                                                                 
                                                                                 <div className="flex-1">
+                                                                                       {/* Subtask Meta Information */}
+                                                                                    <div className="text-xs flex items-center justify-between `gap-2 text-gray-400">
+                                                                                       {/* Meta Info Square Card */}
+                                                                                            <div className="mt-1 mb-2 px-3 py-2 rounded-md bg-gray-800 border border-gray-700 
+                                                                                                            shadow-sm inline-flex items-center gap-4 text-xs text-gray-300">
+
+                                                                                                {subtask.creator && (
+                                                                                                    <div className="flex items-center gap-1">
+                                                                                                        <span className="font-semibold text-cyan-300">By:</span>
+                                                                                                        <span className="text-white">{subtask.creator.full_name || "Unknown"}</span>
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <span className="font-semibold text-cyan-300">Created:</span>
+                                                                                                    <span className="text-gray-200">{formatDateTime(subtask.created_at)}</span>
+                                                                                                </div>
+
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <span className="font-semibold text-cyan-300">Updated:</span>
+                                                                                                    <span className="text-gray-200">{formatDateTime(subtask.updated_at)}</span>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                   
+                                                                                    </div>
                                                                                     {/* Subtask Name */}
                                                                                     <div className="flex items-center space-x-2 mb-1">
-                                                                                        <span className={`text-sm font-medium ${subtask.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-200'}`}>
-                                                                                            {subtask.subtask_name}
+                                                                                    <span
+                                                                                        className={`
+                                                                                            text-sm font-medium pb-0.5 border-b 
+                                                                                            ${
+                                                                                            subtask.status === 'completed'
+                                                                                                ? 'line-through text-cyan-800 border-gray-600' 
+                                                                                                : 'text-cyan-300 border-cyan-500'
+                                                                                            }
+                                                                                        `}
+                                                                                        >
+                                                                                        {subtask.subtask_name}
                                                                                         </span>
-                                                                                        {subtask.is_deleted && (
+                                                                                     {subtask.is_deleted && (
                                                                                             <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded">
                                                                                                 Deleted
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
                                                                                     
-                                                                                    {/* Subtask Meta Information */}
-                                                                                    <div className="text-xs flex items-center justify-between `gap-2 text-gray-400">
-                                                                                        {/* <div>ID: {subtask.subtask_id}</div> */}
-                                                                                    <div className="flex items-center justify-start gap-2">
-                                                                                        <div className="text-xs text-white-800">Created: {formatDateTime(subtask.created_at)}</div>
-                                                                                        <div className="text-xs text-white-900">Updated: {formatDateTime(subtask.updated_at)}</div>
-                                                                                    </div>
-                                                                                        <div className="flex items-center justify-end">
-                                                                         
-                                                                             <div className="mb-2">
-                                                                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                                                                                subtask.status === 'completed' 
-                                                                                    ? 'bg-green-600 text-white' 
-                                                                                    : subtask.status === 'todo'
-                                                                                    ? 'bg-yellow-500 text-black'
-                                                                                    : 'bg-gray-600 text-gray-300'
-                                                                            }`}>
-                                                                                Status: {subtask.status?.replace('_', ' ').toUpperCase() || 'TODO'}
-                                                                            </span>
-                                                                        </div>
-                                                                        
-                                                                     </div>
-                                                                                    </div>
+                                                                                 
                                                                                 </div>
                                                                             </div>
                                                                             
                                                                         
                                                                             <div className="flex items-center space-x-2">
+
+                                                                                
                                                                               
                                                                                <button
                                                                                     onClick={() => handleOpenEditSubtaskModal(subtask, row.original)} // Add edit button
@@ -757,24 +772,42 @@ const TaskTable = ({ filters }) => {
                                                                                 >
                                                                                     <MessageSquare className="w-4 h-4" />
                                                                                 </button>
+                                                                                <div className="flex items-center justify-end">
+                                                                         
+                                                                         <div className="mb-2">
+                                                                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                                                                            subtask.status === 'completed' 
+                                                                                ? 'bg-green-600 text-white' 
+                                                                                : subtask.status === 'todo'
+                                                                                ? 'bg-yellow-500 text-black'
+                                                                                : 'bg-gray-600 text-gray-300'
+                                                                        }`}>
+                                                                            Status: {subtask.status?.replace('_', ' ').toUpperCase() || 'TODO'}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                                    </div>
+                                                                                
                                                                             </div>
                                                                         </div>
                                                                         
                                                                         {/* Subtask Description */}
                                                                         {subtask.description && (
-                                                                            <div className="mb-3 text-sm text-gray-300 bg-gray-600 rounded p-3">
-                                                                                <strong className="text-white">Description:</strong>
-                                                                                <div className="mt-1">{subtask.description}</div>
+                                                                            <div className="mb-3 text-sm text-gray-300 px-4 py-1">
+                                                                               
+                                                                              
                                                                                 <button
                                                                                     onClick={() => toggleSubtaskComments(subtask.subtask_id)}
                                                                                     className="p-1.5 text-purple-400 hover:text-purple-300 transition rounded hover:bg-gray-600"
                                                                                     title={visibleSubtaskComments === subtask.subtask_id ? "Hide Comments" : "Show Comments"}
                                                                                     disabled={isLoadingComments}
                                                                                 >
-                                                                                    <MessageSquare className="w-4 h-4" />
+                                                                                   <div className='flex items-center gap-1'>
+                                                                                   <MessageSquare className="w-4 h-4" />
                                                                                     <span className="ml-1 text-xs">
                                                                                         {isLoadingComments ? 'Loading...' : (visibleSubtaskComments === subtask.subtask_id ? 'Hide Comments' : 'Show Comments')}
                                                                                     </span>
+                                                                                   </div>
                                                                                 </button>
                                                                             </div>
                                                                         )}
@@ -794,7 +827,14 @@ const TaskTable = ({ filters }) => {
                                                                             <div className="mb-2">
                                                                                 <div className="text-xs text-gray-400 mb-1">
                                                                                     <Users className="w-3 h-3 inline-block mr-1" />
-                                                                                    <strong>Assigned Users:</strong>
+                                                                                    <strong>Assigned Users ({subtask.assignees.length}):</strong>
+                                                                                </div>
+                                                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                                                    {subtask.assignees.map((assignee, idx) => (
+                                                                                        <span key={idx} className="inline-block px-2 py-1 text-xs bg-blue-600 text-white rounded">
+                                                                                            {assignee.full_name || assignee.email || 'Unknown User'}
+                                                                                        </span>
+                                                                                    ))}
                                                                                 </div>
                                                                                 <button
                                                                                         onClick={() => handleAddSubtaskComment(row.original.task_id, subtask.subtask_id)}
