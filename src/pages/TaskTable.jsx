@@ -496,7 +496,7 @@ const TaskTable = ({ filters }) => {
     // Error state
     if (error) {
         return (
-            <div className="p-8  bg-gray-900 text-gray-200 flex items-center justify-center">
+            <div className="p-4 bg-gray-900 text-gray-200 flex items-center justify-center">
                 <div className="text-center">
                     <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
                     <h2 className="text-xl font-semibold text-red-400 mb-2">
@@ -529,7 +529,7 @@ const TaskTable = ({ filters }) => {
     };
 
     return (
-        <div className="p-8 h-fit bg-gray-900 text-gray-200">
+        <div className=" p-4 h-fit bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-indigo-400">My Tasks</h2>
                 <div className='flex gap-3'>
@@ -763,7 +763,7 @@ const TaskTable = ({ filters }) => {
                                                                         {/* Subtask Description */}
                                                                         {subtask.description && (
                                                                             <div className="mb-3 text-sm text-gray-300 bg-gray-600 rounded p-3">
-                                                                                <strong className="text-gray-400">Description:</strong>
+                                                                                <strong className="text-white">Description:</strong>
                                                                                 <div className="mt-1">{subtask.description}</div>
                                                                                 <button
                                                                                     onClick={() => toggleSubtaskComments(subtask.subtask_id)}
