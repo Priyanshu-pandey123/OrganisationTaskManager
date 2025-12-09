@@ -343,22 +343,24 @@ const TaskTable = ({ filters }) => {
         columnHelper.accessor('task_name', {
             header: () => 'Task Name',
             cell: info => (
-                <button 
-                    onClick={() => handleTaskClick(info.row.original)}
-                    className="font-semibold text-left text-indigo-400 hover:text-indigo-300 transition duration-150 hover:underline"
-                >
-                    {info.getValue()}
-                </button>
+              <button
+                onClick={() => handleTaskClick(info.row.original)}
+                className="font-semibold text-cyan-300 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-200 hover:decoration-cyan-300 transition duration-150"
+              >
+                {info.getValue()}
+              </button>
             ),
-        }),
-        columnHelper.accessor('description', {
+          }),
+          
+          columnHelper.accessor('description', {
             header: () => 'Description',
             cell: info => (
-                <div className="text-sm text-gray-400 max-w-xs truncate" title={info.getValue()}>
-                    {info.getValue()}
-                </div>
+              <div className="text-sm text-gray-300 max-w-xs truncate" title={info.getValue()}>
+                {info.getValue()}
+              </div>
             ),
-        }),
+          }),
+          
         columnHelper.accessor("status", {
             header: () => "Status",
             cell: ({ row }) => {
@@ -431,34 +433,36 @@ const TaskTable = ({ filters }) => {
             enableSorting: false,
         }),
            columnHelper.display({
-            id: 'actions',
-            header: () => 'Actions',
+            id: 'Edit',
+            header: () => 'Edit ',
             cell: ({ row }) => (
                 <div className="flex items-center space-x-2">
                     <button
                         onClick={() => handleOpenEditDrawer(row.original)} // Add edit button
-                        className="p-1 text-blue-400 hover:text-blue-300 transition"
+                        className="p-2 text-blue-400 hover:text-blue-300 transition border rounded-lg"
                         title="Edit Task"
                     >
-                        <Edit className="w-4 h-4" />
+                        <div  className='text-white flex items-center gap-1'><Edit className="w-4 h-4" /><p>Edit Task </p></div>
                     </button>
+                
+                
+                </div>
+            ),
+        }),
+        columnHelper.display({
+            id: 'Add Subtask',
+            header: () => 'SubTask',
+            cell: ({ row }) => (
+                <div className="flex items-center space-x-2">
+                    
                     <button
                         onClick={() => handleOpenSubtaskModal(row.original)} // Updated this line
-                        className="p-1 text-indigo-400 hover:text-indigo-300 transition"
+                        className="p-2 text-indigo-400 hover:text-indigo-300 transition flex border rounded-lg"
                         title="Add Subtask"
                     >
-                        <div><Plus className="w-4 h-4" />  </div>
+                        <div className='flex items-center text-white'><Plus className="w-4 h-4" />  <p>Add SubTask</p></div>
                     </button>
-                    {/* <button
-                        onClick={() => setShowCommentForm(row.original.task_id)}
-                        className="p-1 text-green-400 hover:text-green-300 transition"
-                        title="Add Comment"
-                    >
-                        <MessageSquare className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs text-gray-500">
-                        {subtasksData[row.original.task_id]?.length || 0} subtasks, {comments[row.original.task_id]?.length || 0} comments
-                    </span> */}
+                 
                 </div>
             ),
         }),

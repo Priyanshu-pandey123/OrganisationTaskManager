@@ -54,8 +54,8 @@ const TaskDetailDrawer = ({ isOpen, onClose, task, subtasks, comments, subtaskCo
             {/* Description */}
             {task.description && (
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                <h4 className="text-sm font-semibold text-white mb-2">Description</h4>
+                <p className="text-sm text-white  whitespace-pre-wrap">
                   {task.description}
                 </p>
               </div>
@@ -90,13 +90,13 @@ const TaskDetailDrawer = ({ isOpen, onClose, task, subtasks, comments, subtaskCo
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Task Info</h4>
               <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <div>Created by: {task.creator?.full_name || 'Unknown'}</div>
-                <div>Created: {new Date(task.created_at).toLocaleString()}</div>
+                <div className='text-white'>Created by: {task.creator?.full_name || 'Unknown'}</div>
+                <div className='text-white'>Created: {new Date(task.created_at).toLocaleString()}</div>
                 {task.updated_at !== task.created_at && (
-                  <div>Last updated: {new Date(task.updated_at).toLocaleString()}</div>
+                  <div className='text-white'>Last updated: {new Date(task.updated_at).toLocaleString()}</div>
                 )}
                 {task.last_editor && (
-                  <div>Last edited by: {task.last_editor.full_name}</div>
+                  <div className='text-white'>Last edited by: {task.last_editor.full_name}</div>
                 )}
               </div>
             </div>

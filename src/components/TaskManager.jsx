@@ -490,14 +490,14 @@ const updateTaskFilters = (updates) => {
   }, [isProfileDropdownOpen]);
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 sm:p-4 transition-colors duration-300it ">
-      <div className="max-w-8xl px-[100px] rounded-xl  bg-gray-100 dark:bg-gray-800 shadow-lg">
+    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300it ">
+      <div className="w-[100%] px-[100px] rounded-xl  py-8 bg-gray-100 dark:bg-gray-800 ">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-0">Collaborative Task Manager</h1>
           
           {/* User Profile Dropdown - Top Right */}
-          <div className="relative">
+          <div className="relative ">
             <button
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
               className="flex items-center space-x-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded-lg transition-colors duration-200"
@@ -514,7 +514,7 @@ const updateTaskFilters = (updates) => {
 
             {/* Dropdown Menu */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+              <div className="absolute right-0  top-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   {userLoading ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">Loading user...</p>
@@ -623,7 +623,7 @@ const updateTaskFilters = (updates) => {
               value={newCompanyName}
               onChange={(e) => setNewCompanyName(e.target.value)}
               placeholder="Enter new company name"
-              className="w-full sm:w-auto px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              className="w-full sm:w-auto px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             />
             <button
               onClick={handleCreateCompanyAndJoin}
@@ -698,13 +698,13 @@ const updateTaskFilters = (updates) => {
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="Enter team name"
-                  className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                   disabled={creatingTeam}
                 />
                 <button
                   onClick={handleCreateTeam}
                   disabled={creatingTeam || !newTeamName.trim()}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:bg-purple-600 text-white font-medium rounded-lg transition duration-200"
                 >
                   {creatingTeam ? 'Creating...' : 'Create Team'}
                 </button>
@@ -717,14 +717,14 @@ const updateTaskFilters = (updates) => {
             {/* Add Member to Team Section */}
             {currentCompanyTeams.length > 0 && (
               <div className="mt-4 p-3 bg-gray-300 dark:bg-gray-600 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3">Add Member to Team</h3>
+                <h3 className="text-lg font-semibold mb-3">Add Member to Team </h3>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <div className="flex items-center space-x-2 w-full sm:w-auto">
-                    <label className="text-sm font-medium">Select Team:</label>
+                    <label className="text-sm font-medium text-white">Select Team:</label>
                     <select
                       value={selectedTeamForMember}
                       onChange={(e) => setSelectedTeamForMember(e.target.value)}
-                      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg"
+                      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-white rounded-lg"
                     >
                       <option value="">Select Team</option>
                       {currentCompanyTeams.map((team, index) => (
@@ -738,12 +738,12 @@ const updateTaskFilters = (updates) => {
                       value={invitedEmail}
                       onChange={(e) => setInvitedEmail(e.target.value)}
                       placeholder="Member email"
-                      className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                      className="flex-1 px-3 py-2 text-base bg-gray-200 dark:bg-gray-700 text-white rounded-lg placeholder-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                     />
                    <button
                       onClick={handleAddMemberToTeam}
                       disabled={!selectedTeamForMember || invitingMember}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:bg-indigo-700  text-white font-medium rounded-lg transition duration-200"
                     >
                       {invitingMember ? 'Inviting...' : 'Add Member'}
                     </button>
@@ -754,13 +754,13 @@ const updateTaskFilters = (updates) => {
                               {/* Team Filters */}
                               <div className="mt-4 flex flex-wrap gap-4 items-center">
                   <div className="flex items-center space-x-2">
-                    <label className="text-sm font-medium">Filter by Team:</label>
+                    <label className="text-sm  text-white font-medium">Filter by Team:</label>
                     <select
                       value={selectedTeamFilter || ''}
                       onChange={(e) => setSelectedTeamFilter(e.target.value)}
                       className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg text-sm"
                     >
-                      <option value="">All Teams</option>
+                      <option value="" className='text-white'>All Teams</option>
                       {currentCompanyTeams.map((team, index) => (
                         <option key={team.id || index} value={team.team_name}>{team.team_name}</option>
                       ))}
