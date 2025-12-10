@@ -197,7 +197,7 @@ const Login = ({ onToggleForm }) => {
                       ? 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 cursor-not-allowed' 
                       : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder={isInvitationFlow ? invitedEmail : "saurav123 or you@example.com"}
+                  placeholder={isInvitationFlow ? invitedEmail : "you@example.com"}
                 />
               </div>
               {isInvitationFlow && (

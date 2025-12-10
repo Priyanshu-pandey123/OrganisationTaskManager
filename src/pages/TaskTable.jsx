@@ -680,7 +680,7 @@ const TaskTable = ({ filters }) => {
                                     {/* Expanded Content */}
                                     {expandedRows[row.original.task_id] && (
                                         <tr>
-                                            <td colSpan={columns.length} className="px-6 py-4 bg-gray-750 max-h-[500px] overflow-y-auto">
+                                            <td colSpan={columns.length} className="px-12 py-4 bg-gray-750 max-h-[400px] overflow-y-auto">
                                                 <div className="space-y-4 max-h-[500px] overflow-y-scroll">
                                                     {/* Subtasks */}
                                                     {subtasksData[row.original.task_id]?.length > 0 && (
@@ -819,7 +819,7 @@ const TaskTable = ({ filters }) => {
                                                                         {subtask.due_date && (
                                                                             <div className="mb-2 flex items-center text-xs text-gray-400">
                                                                                 <Calendar className="w-3 h-3 mr-1 text-red-400" />
-                                                                                <strong className="text-gray-500 mr-1">Due:</strong> 
+                                                                                <strong className="text-white  mr-1">Due:</strong> 
                                                                                 {formatDueDate(subtask.due_date)}
                                                                             </div>
                                                                         )}
@@ -865,14 +865,14 @@ const TaskTable = ({ filters }) => {
                                                                                         {subtaskCommentsData.data.replies.map((reply) => (
                                                                                             <div key={reply.reply_id} className="bg-gray-600 rounded p-3">
                                                                                                 <div className="flex items-center space-x-2 mb-2">
-                                                                                                    <span className="text-xs font-medium text-gray-300">
+                                                                                                    <span className="text-xs font-medium text-white">
                                                                                                         {reply.user?.full_name || 'Unknown User'}
                                                                                                     </span>
-                                                                                                    <span className="text-xs text-gray-500">
+                                                                                                    <span className="text-xs text-white">
                                                                                                         {new Date(reply.created_at).toLocaleString()}
                                                                                                     </span>
                                                                                                 </div>
-                                                                                                <p className="text-xs text-gray-200">{reply.content}</p>
+                                                                                                <p className="text-xs text-white ">{reply.content}</p>
                                                                                             </div>
                                                                                         ))}
                                                                                     </>
@@ -926,11 +926,11 @@ const TaskTable = ({ filters }) => {
                                                                     <div key={comment.id} className="p-3 bg-gray-700 rounded-lg border border-gray-600">
                                                                         <div className="flex items-center space-x-2 mb-1">
                                                                             <span className="text-xs font-medium text-gray-400">{comment.author}</span>
-                                                                            <span className="text-xs text-gray-500">
+                                                                            <span className="text-xs text-white ">
                                                                                 {new Date(comment.created_at).toLocaleString()}
                                                                             </span>
                                                                         </div>
-                                                                        <p className="text-sm text-gray-300">{comment.text}</p>
+                                                                        <p className="text-sm text-white ">{comment.text}</p>
                                                                     </div>
                                                                 ))}
                                                             </div>
