@@ -11,6 +11,8 @@ import EmailVerification from './components/EmailVerification';
 import AcceptInvitation from './pages/AcceptInvitation';
 import TeamJoinedSuccess from './components/TeamJoinedSuccess';
 import ProtectedRoute from './components/ProtectedRoute'; // Add this import
+import ForgetPassword from './pages/ForgetPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         {/* <Header /> */}
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/forget-password" element={<ForgetPassword />} />
+          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
           <Route path="/auth/verify/:token" element={<EmailVerification />} />
           <Route path="/invite/accept/:token" element={<AcceptInvitation />} />
           

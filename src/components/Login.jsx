@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useLoginMutation, useMeQuery, useAcceptInvitationPostMutation } from '../store/apiSlice';
 import { useAppDispatch } from '../store/hooks';
@@ -272,12 +272,12 @@ const Login = ({ onToggleForm }) => {
               </div>
 
               <div className="text-sm">
-                <a
-                  href="#"
+                <Link
+                  to={'/forget-password'}
                   className="font-medium text-indigo-600 hover:text-indigo-500"
                 >
                   Forgot your password?
-                </a>
+                </Link>
               </div>
             </div>
 

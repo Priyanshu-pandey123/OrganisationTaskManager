@@ -418,6 +418,21 @@ export const apiSlice = createApi({
       },
     }),
   }),
+  forgotPassword: builder.mutation({
+    query: (email: string) => ({
+      url: '/v1/auth/forgot-password',
+      method: 'POST',
+      body: { email }
+    }),
+  }),
+
+  resetPassword: builder.mutation({
+    query: ({ token, password }: { token: string; password: string }) => ({
+      url: '/v1/auth/reset-password',
+      method: 'POST',
+      body: { token, password }
+    }),
+  }),
 
   getSubTaskComments: builder.query({
     query: (subtask_id) => `/v1/subtask/reply/${subtask_id}`,
@@ -425,6 +440,8 @@ export const apiSlice = createApi({
     keepUnusedDataFor: 0,
   }),
 }),
+
+
 });
 
 export const {
@@ -450,5 +467,7 @@ export const {
   useUpdateTaskMutation,
   useUpdateSubtaskMutation  ,
   useCreateSubTaskCommentMutation,
-  useGetSubTaskCommentsQuery
+  useGetSubTaskCommentsQuery,
+  useForgotPasswordMutation,
+  useResetPasswordMutation
 } = apiSlice;
