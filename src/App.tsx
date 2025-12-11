@@ -17,7 +17,7 @@ import ResetPassword from './pages/ResetPassword'
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="min-h-screen  bg-white dark:bg-gray-900">
         {/* <Header /> */}
         <Routes>
           <Route path="/" element={<Home />} />

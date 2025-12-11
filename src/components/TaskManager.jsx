@@ -492,8 +492,8 @@ const updateTaskFilters = (updates) => {
   }, [isProfileDropdownOpen]);
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <div className="w-[100%] px-[100px] rounded-xl  py-8 bg-gray-100 dark:bg-gray-800 ">
+    <div style={{ fontFamily: 'Inter, sans-serif' }} className="min-h-screen   text-white transition-colors duration-300">
+      <div className="w-[100%] px-[100px] rounded-xl  py-8  ">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-0">Collaborative Task Manager</h1>
@@ -661,7 +661,7 @@ const updateTaskFilters = (updates) => {
           {currentCompany ? (
             filteredTasks.length > 0 ? (
               filteredTasks.map(task => (
-                <div key={task.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden">
+                <div key={task.id} className=" dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden">
                   <div className="p-2 sm:p-3 flex flex-col items-start cursor-pointer" onClick={() => handleToggleTask(task.id)}>
                     <div className="w-full flex justify-between items-center mb-1">
                       <div className="flex-grow text-sm text-gray-600 dark:text-gray-300 font-semibold">

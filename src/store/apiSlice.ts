@@ -232,6 +232,13 @@ export const apiSlice = createApi({
       method: 'GET'
     }),
   }),
+updateSubtaskStatus: builder.mutation({
+  query: ({ subtask_id, status }) => ({
+    url: `/v1/subtask/status/${subtask_id}`,
+    method: 'PATCH',
+    body: { status },
+  }),
+}),
 }),
 
 
@@ -263,5 +270,6 @@ export const {
   useGetSubTaskCommentsQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
-  useGetMyTeamsQuery
+  useGetMyTeamsQuery,
+  useUpdateSubtaskStatusMutation
 } = apiSlice;

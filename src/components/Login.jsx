@@ -157,16 +157,75 @@ const Login = ({ onToggleForm }) => {
     }
   }, [profileData, isProfileLoading, profileError, shouldFetchProfile, invitationToken, authToken, navigate, acceptInvitationPost]);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
+    <div className='flex flex-row items-center justify-center px-[150px] min-h-screen '>
+   
+     <div className=" lg:flex w-1/2 ">
+
+      {/* Floating soft blobs */}
+      <div className="absolute -top-20 -left-16 w-72 h-72 bg-indigo-700/30 blur-3xl rounded-full animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-700/30 blur-3xl rounded-full animate-bounce" />
+      <div className="absolute top-1/3 left-1/3 w-48 h-48 bg-blue-600/20 blur-2xl rounded-full animate-ping" />
+
+      {/* Subtle overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent"></div>
+
+      {/* Content */}
+      <div className="z-1  text-center animate-fadeIn border-white border-1">
+
+
+
+        {/* Heading */}
+        <h1 className="text-5xl font-extrabold leading-tight  
+          bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 
+          text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]
+          animate-slideUp">
+          Organisation <br/> Task Manager
+        </h1>
+
+        {/* Typing line */}
+        <p className="text-gray-300 text-lg h-6 mt-3 animate-typing overflow-hidden whitespace-nowrap border-r-2 border-indigo-400">
+          Collaborate • Organise • Track Tasks • Grow Faster
+        </p>
+
+        {/* Features */}
+        <div className="mt-10 space-y-3 text-gray-300 text-sm mx-auto w-fit">
+
+<div className="flex items-center space-x-2 animate-slideInLeft delay-[0.2s]">
+  <span className="w-3 h-3 rounded-full bg-green-400"></span>
+  <span>Team Collaboration</span>
+</div>
+
+<div className="flex items-center space-x-2 animate-slideInRight delay-[0.4s]">
+  <span className="w-3 h-3 rounded-full bg-blue-400"></span>
+  <span>Real-time Updates</span>
+</div>
+
+<div className="flex items-center space-x-2 animate-slideInLeft delay-[0.6s]">
+  <span className="w-3 h-3 rounded-full bg-purple-400"></span>
+  <span>Smart Task Management</span>
+</div>
+
+</div>
+
+      </div>
+    </div>
+    <div className="flex  z-30 items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
         <div className="p-8 sm:p-10">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
+          <h2 className="text-3xl font-extrabold leading-tight text-center  
+          bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 
+          text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]
+          animate-slideUp">
               {isInvitationFlow ? 'Join Your Team' : 'Sign in to your account'}
             </h2>
           
           </div>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
+        
+          <p className="text-center text-md text-gray-500 dark:text-gray-400 mb-8 font-extrabold leading-tight  
+          bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 
+          text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]
+          animate-slideUp">
             {isInvitationFlow 
               ? `Welcome! Please sign in with ${invitedEmail} to join your team.` 
               : 'Welcome back!'
@@ -337,6 +396,8 @@ const Login = ({ onToggleForm }) => {
         </div>
       </div>
     </div>
+    </div>
+    
   );
 };
 

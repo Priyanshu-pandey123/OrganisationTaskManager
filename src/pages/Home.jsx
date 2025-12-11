@@ -38,7 +38,7 @@ const Home = () => {
 
     return (
         <div className=''>
-            <div className="max-w-6xl mx-auto">
+            <div className="">
                 {/* Conditional Rendering */}
                 {shouldShowLogin ? (
                     <Login onToggleForm={toggleForm} />
