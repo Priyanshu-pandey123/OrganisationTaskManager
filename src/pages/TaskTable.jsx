@@ -6,7 +6,7 @@ import TaskDetailDrawer from '../components/TaskDetailDrawer';
 import CreateSubtaskModal from '../components/CreateSubtaskModal'; // Add this import
 import EditTaskDrawer from '../components/EditTaskDrawer';
 import { formatDueDate, getStatusIcon, getPriorityColor } from '../utils/helper';
-import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation ,useCreateSubTaskCommentMutation,useGetSubTaskCommentsQuery} from '../store/apiSlice';
+import { useGetTasksQuery, useMeQuery, useCreateSubtaskMutation ,useGetSubtaskByParamsQuery, useUpdateTaskStatusMutation ,useCreateSubTaskCommentMutation,useGetSubTaskCommentsQuery,useUpdateSubtaskStatusMutation} from '../store/apiSlice';
 import { useCurrentUser } from '../store/hooks';
 import { toast } from 'react-toastify';
 import EditSubtaskModal from '../components/EditSubtaskModal'; 
@@ -38,6 +38,8 @@ const TaskTable = ({ filters }) => {
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
     const [subtasksData, setSubtasksData] = useState({}); 
     const [createSubtask, { isLoading: isCreatingSubtask, error: createSubtaskError }] = useCreateSubtaskMutation();
+    const [updateSubtaskStatus] = useUpdateSubtaskStatusMutation();
+
     const [updateTask, { isLoading: isUpdatingTask }] = useUpdateTaskStatusMutation();
     const [updateTaskStatus, { isLoading: isUpdatingTaskStatus }] = useUpdateTaskStatusMutation();      
     const [createSubtaskComment, { isLoading: isCreatingSubtaskComment }] = useCreateSubTaskCommentMutation();
@@ -232,6 +234,31 @@ const TaskTable = ({ filters }) => {
             [taskId]: !prev[taskId]
         }));
     };
+
+    const handleSubtaskStatusChange = async (taskId, subtask) => {
+        try {
+            // Toggle between "todo" and "done"
+            const newStatus = subtask.status === "todo" ? "done" : "todo"; 
+                   
+    
+            await updateSubtaskStatus({
+                subtask_id: subtask.subtask_id,
+                status: newStatus,
+            }).unwrap();
+    
+            toast.success("Subtask status updated!");
+    
+            // refresh only that one subtask list
+            if (expandedRows[taskId]) {
+                refetch(); // <-- only refetch subtasks API
+            }
+    
+        } catch (err) {
+            toast.error("Failed to update subtask.");
+            console.log(err);
+        }
+    };
+    
     
     // Simplify the toggle function
     const toggleSubtaskComments = (subtaskId) => {
@@ -745,56 +772,39 @@ const TaskTable = ({ filters }) => {
 
                                                                                         <div className="flex items-center justify-end">
                                                                                             <div className="mb-2">
-                                                                                                <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                                                                                                    subtask.status === 'completed'
-                                                                                                        ? 'bg-green-600 text-white'
-                                                                                                        : subtask.status === 'todo'
-                                                                                                        ? 'bg-yellow-500 text-black'
-                                                                                                        : 'bg-gray-600 text-gray-300'
-                                                                                                }`}>
-                                                                                                    Status: {subtask.status?.replace('_', ' ').toUpperCase() || 'TODO'}
-                                                                                                </span>
+                                <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                                    subtask.status === 'done'
+                                        ? 'bg-green-600 text-white'
+                                        : subtask.status === 'todo'
+                                        ? 'bg-yellow-500 text-black'
+                                        : 'bg-gray-600 text-gray-300'
+                                }`}>
+                                    Status: {subtask.status?.replace('_', ' ').toUpperCase() || 'TODO'}
+                                </span>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="mt-2">
-                                                                                        <div className="flex items-center space-x-2">
-                                                                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                                                                    subtask.status === 'completed'
-                                                                                        ? 'bg-green-500 border-green-500'
-                                                                                        : subtask.status === 'in_progress'
-                                                                                        ? 'bg-yellow-500 border-yellow-500'
-                                                                                        : 'border-gray-400'
-                                                                                }`}>
-                                                                                    {subtask.status === 'completed' && (
-                                                                                        <CheckCircle className="w-3 h-3 text-white" />
-                                                                                    )}
-                                                                                    {subtask.status === 'in_progress' && (
-                                                                                        <Clock className="w-3 h-3 text-black" />
-                                                                                    )}
-                                                                                </div>
+                                                                            <div className="flex items-center gap-2">
+  <input
+    type="checkbox"
+    checked={subtask.status === "done"}
+    onChange={() => handleSubtaskStatusChange(row.original.task_id, subtask)}
+    className="w-4 h-4 cursor-pointer accent-green-600"
+  />
 
-                                                                                            <span
-                                                                                                className={`
-                                                                                                    text-sm font-medium pb-0.5 border-b
-                                                                                                    ${
-                                                                                                    subtask.status === 'completed'
-                                                                                                        ? 'line-through text-cyan-800 border-gray-600'
-                                                                                                        : 'text-white~ border-cyan-500'
-                                                                                                    }
-                                                                                                `}
-                                                                                                >
-                                                                                                {subtask.subtask_name}
-                                                                                                </span>
-                                                                                             {subtask.is_deleted && (
-                                                                                                    <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded">
-                                                                                                        Deleted
-                                                                                                    </span>
-                                                                                                )}
-                                                                                        </div>
-                                                                                    </div>
+  <span
+    className={`text-sm font-medium ${
+      subtask.status === "done"
+        ? "line-through text-gray-400"
+        : "text-white"
+    }`}
+  >
+    {subtask.subtask_name}
+  </span>
+</div>
+
                                                                         {subtask.description && (
                                                                             <div className="mb-3 text-sm text-gray-300 px-4 py-1">
                                                                                

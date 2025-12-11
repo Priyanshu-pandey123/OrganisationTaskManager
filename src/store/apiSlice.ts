@@ -235,7 +235,7 @@ export const apiSlice = createApi({
 updateSubtaskStatus: builder.mutation({
   query: ({ subtask_id, status }) => ({
     url: `/v1/subtask/status/${subtask_id}`,
-    method: 'PATCH',
+    method: 'PUT',
     body: { status },
   }),
 }),
