@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useCreateTaskMutation, useGetMemberOfTeamAndOrgQuery } from '../store/apiSlice';
+import { useCreateTaskMutation, useGetMemberOfTeamAndOrgQuery, useGetMyTeamsQuery } from '../store/apiSlice';
 import { toast } from 'react-toastify';
 
-const TaskAssignmentDrawer = ({ 
-  isOpen, 
-  onClose, 
-  currentCompany, 
-  currentCompanyTeams,
-  teamMembersData 
+const TaskAssignmentDrawer = ({
+  isOpen,
+  onClose,
+  currentCompany,
+  teamMembersData
 }) => {
   const [createTask, { isLoading: creatingTask }] = useCreateTaskMutation();
-  
+
+  // Get teams for the current company
+  const {
+    data: teamsData,
+    isLoading: loadingTeams
+  } = useGetMyTeamsQuery(
+    currentCompany?.id ? currentCompany.id : '',
+    { skip: !currentCompany?.id }
+  );
+
   const [taskData, setTaskData] = useState({
     task_name: '',
     description: '',
@@ -19,19 +27,19 @@ const TaskAssignmentDrawer = ({
     status: 'todo',
     priority: 'medium'
   });
-  
+
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Get team members for the selected team
-  const { 
-    data: teamMembers, 
+  const {
+    data: teamMembers,
     isLoading: loadingMembers,
     refetch: refetchMembers
   } = useGetMemberOfTeamAndOrgQuery(
-    taskData.team_id && currentCompany?.id ? { 
-      orgId: currentCompany.id, 
-      teamId: taskData.team_id 
+    taskData.team_id && currentCompany?.id ? {
+      orgId: currentCompany.id,
+      teamId: taskData.team_id
     } : { orgId: '', teamId: '' },
     { skip: !taskData.team_id || !currentCompany?.id }
   );
@@ -39,6 +47,7 @@ const TaskAssignmentDrawer = ({
 
 
   const teamMembersList = teamMembers?.data?.users || [];
+  const teamsList = teamsData?.data || [];
 
   // Reset form when drawer closes
   useEffect(() => {
@@ -190,9 +199,12 @@ const TaskAssignmentDrawer = ({
                   onChange={(e) => handleInputChange('team_id', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   required
+                  disabled={loadingTeams}
                 >
-                  <option value="">Select a team</option>
-                  {currentCompanyTeams?.map((team) => (
+                  <option value="">
+                    {loadingTeams ? 'Loading teams...' : 'Select a team'}
+                  </option>
+                  {teamsList?.map((team) => (
                     <option key={team.team_id} value={team.team_id}>
                       {team.team_name}
                     </option>
