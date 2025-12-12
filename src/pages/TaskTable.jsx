@@ -84,11 +84,15 @@ const TaskTable = ({ filters }) => {
     const tasks = apiResponse?.data?.tasks || [];
 
     // Extract unique assignees for subtask filter dropdown
-    const  uniqueAssignees = useMemo(() => {
+    const uniqueAssignees = useMemo(() => {
         const assignees = new Set();
         tasks.forEach(task => {
-            if (task?.assigned_users) {
-                assignees.add(task?.assigned_users?.full_name);
+            if (task?.assigned_users && Array.isArray(task.assigned_users)) {
+                task.assigned_users.forEach(user => {
+                    if (user?.full_name) {
+                        assignees.add(user.full_name);
+                    }
+                });
             }
         });
         return Array.from(assignees).sort();
@@ -98,7 +102,6 @@ const TaskTable = ({ filters }) => {
         [expandedRows]
     );
 
-    console.log(uniqueAssignees,'uniqueAssignees')
 
    
     const primaryExpandedTaskId = expandedTaskIds.length > 0 ? expandedTaskIds[0] : null;
@@ -856,7 +859,7 @@ const TaskTable = ({ filters }) => {
                                                                 >
                                                                     <option value="">All Assignees</option>
                                                                     {uniqueAssignees.map(assignee => (
-                                                                        <option key={assignee} value={assignee} className='text-white'>{assignee}</option>
+                                                                        <option key={assignee} value={assignee}>{assignee}</option>
                                                                     ))}
                                                                 </select>
                                                             </div>
