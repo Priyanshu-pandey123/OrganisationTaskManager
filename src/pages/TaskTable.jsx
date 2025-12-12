@@ -63,6 +63,9 @@ const TaskTable = ({ filters }) => {
     // Add filter state
     const [filterType, setFilterType] = useState('my_tasks');
 
+    // Add subtask filter state per task
+    const [subtaskFilters, setSubtaskFilters] = useState({}); // task_id -> filters
+
     // Build filter object for API call
     const currentFilters = useMemo(() => {
         return {
@@ -79,13 +82,27 @@ const TaskTable = ({ filters }) => {
     
     // Extract tasks from API response
     const tasks = apiResponse?.data?.tasks || [];
+
+    // Extract unique assignees for subtask filter dropdown
+    const  uniqueAssignees = useMemo(() => {
+        const assignees = new Set();
+        tasks.forEach(task => {
+            if (task?.assigned_users) {
+                assignees.add(task?.assigned_users?.full_name);
+            }
+        });
+        return Array.from(assignees).sort();
+    }, [tasks]);
     const expandedTaskIds = useMemo(() => 
         Object.keys(expandedRows).filter(taskId => expandedRows[taskId]), 
         [expandedRows]
     );
 
+    console.log(uniqueAssignees,'uniqueAssignees')
+
    
     const primaryExpandedTaskId = expandedTaskIds.length > 0 ? expandedTaskIds[0] : null;
+
     const { data: primarySubtaskData, isLoading: isPrimarySubtaskLoading, error: primarySubtaskError } = useGetSubtaskByParamsQuery(primaryExpandedTaskId, {
         skip: !primaryExpandedTaskId,
     });
@@ -104,6 +121,76 @@ const TaskTable = ({ filters }) => {
             }));
         }
     }, [primarySubtaskData, primaryExpandedTaskId]);
+
+    // Filter subtasks based on per-task client-side filters
+    const getFilteredSubtasks = (subtasks, taskId) => {
+        if (!subtasks) return [];
+
+        const taskFilters = subtaskFilters[taskId] || {
+            status: '',
+            assignee: '',
+            search: '',
+            sort_by: 'created_at',
+            order: 'desc',
+        };
+
+        let filtered = subtasks.filter(subtask => {
+            // Search filter
+            if (taskFilters.search) {
+                const searchTerm = taskFilters.search.toLowerCase();
+                const matchesSearch =
+                    subtask.subtask_name?.toLowerCase().includes(searchTerm) ||
+                    subtask.description?.toLowerCase().includes(searchTerm) ||
+                    subtask.creator?.full_name?.toLowerCase().includes(searchTerm);
+
+                if (!matchesSearch) return false;
+            }
+
+            // Status filter
+            if (taskFilters.status && subtask.status !== taskFilters.status) {
+                return false;
+            }
+
+            // Assignee filter
+            if (taskFilters.assignee) {
+                const hasAssignee = subtask.assignees?.some(assignee =>
+                    assignee.full_name === taskFilters.assignee
+                );
+                if (!hasAssignee) return false;
+            }
+
+            return true;
+        });
+
+        // Sort the filtered results
+        filtered.sort((a, b) => {
+            let aValue, bValue;
+
+            switch (taskFilters.sort_by) {
+                case 'subtask_name':
+                    aValue = a.subtask_name?.toLowerCase() || '';
+                    bValue = b.subtask_name?.toLowerCase() || '';
+                    break;
+                case 'updated_at':
+                    aValue = new Date(a.updated_at || a.created_at);
+                    bValue = new Date(b.updated_at || b.created_at);
+                    break;
+                case 'created_at':
+                default:
+                    aValue = new Date(a.created_at);
+                    bValue = new Date(b.created_at);
+                    break;
+            }
+
+            if (taskFilters.order === 'asc') {
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+            } else {
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+            }
+        });
+
+        return filtered;
+    };
     // Log filters to show which query would be used
     // Log current state
     useEffect(() => {
@@ -613,11 +700,12 @@ const TaskTable = ({ filters }) => {
             {/* Show current filter indicator */}
             <div className="mb-4 text-sm text-gray-400">
                 Showing: <span className="text-indigo-400 font-medium">
-                    {filterType === 'my_tasks' ? 'My Tasks' : 
-                     filterType === 'assigned_to_me' ? 'Assigned To Me' : 
+                    {filterType === 'my_tasks' ? 'My Tasks' :
+                     filterType === 'assigned_to_me' ? 'Assigned To Me' :
                      filterType === 'assigned_by_me' ? 'Assigned By Me' : 'All Tasks'}
                 </span>
             </div>
+
             
             {tasks.length === 0 ? (
                 <div className="text-center py-12">
@@ -709,15 +797,129 @@ const TaskTable = ({ filters }) => {
                                         <tr>
                                             <td colSpan={columns.length} className="px-12 py-4 bg-gray-750 max-h-[400px] overflow-y-auto">
                                                 <div className="space-y-4 max-h-[500px] overflow-y-scroll">
+                                                    {/* Subtask Filters */}
+                                                    <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                                                        <h4 className="text-sm font-semibold text-gray-300 mb-3">Filter Subtasks</h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                            {/* Search Input */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-400 mb-1">Search</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={(subtaskFilters[row.original.task_id] || {}).search || ''}
+                                                                    onChange={(e) => setSubtaskFilters(prev => ({
+                                                                        ...prev,
+                                                                        [row.original.task_id]: {
+                                                                            ...prev[row.original.task_id],
+                                                                            search: e.target.value
+                                                                        }
+                                                                    }))}
+                                                                    placeholder="Search subtasks..."
+                                                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500 text-sm"
+                                                                />
+                                                            </div>
+
+                                                            {/* Status Filter */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-400 mb-1">Status</label>
+                                                                <select
+                                                                    value={(subtaskFilters[row.original.task_id] || {}).status || ''}
+                                                                    onChange={(e) => setSubtaskFilters(prev => ({
+                                                                        ...prev,
+                                                                        [row.original.task_id]: {
+                                                                            ...prev[row.original.task_id],
+                                                                            status: e.target.value
+                                                                        }
+                                                                    }))}
+                                                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:border-indigo-500 text-sm"
+                                                                >
+                                                                    <option value="">All Statuses</option>
+                                                                    <option value="todo">Todo</option>
+                                                                    <option value="in_progress">In Progress</option>
+                                                                    <option value="done">Done</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Assignee Filter */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-400 mb-1">Assignee</label>
+                                                                <select
+                                                                    value={(subtaskFilters[row.original.task_id] || {}).assignee || ''}
+                                                                    onChange={(e) => setSubtaskFilters(prev => ({
+                                                                        ...prev,
+                                                                        [row.original.task_id]: {
+                                                                            ...prev[row.original.task_id],
+                                                                            assignee: e.target.value
+                                                                        }
+                                                                    }))}
+                                                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:border-indigo-500 text-sm"
+                                                                >
+                                                                    <option value="">All Assignees</option>
+                                                                    {uniqueAssignees.map(assignee => (
+                                                                        <option key={assignee} value={assignee} className='text-white'>{assignee}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Sort Options */}
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-400 mb-1">Sort By</label>
+                                                                <select
+                                                                    value={`${(subtaskFilters[row.original.task_id] || {}).sort_by || 'created_at'}_${(subtaskFilters[row.original.task_id] || {}).order || 'desc'}`}
+                                                                    onChange={(e) => {
+                                                                        const [sort_by, order] = e.target.value.split('_');
+                                                                        setSubtaskFilters(prev => ({
+                                                                            ...prev,
+                                                                            [row.original.task_id]: {
+                                                                                ...prev[row.original.task_id],
+                                                                                sort_by,
+                                                                                order
+                                                                            }
+                                                                        }));
+                                                                    }}
+                                                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:border-indigo-500 text-sm"
+                                                                >
+                                                                    <option value="created_at_desc">Newest First</option>
+                                                                    <option value="created_at_asc">Oldest First</option>
+                                                                    <option value="updated_at_desc">Recently Updated</option>
+                                                                    <option value="updated_at_asc">Least Recently Updated</option>
+                                                                    <option value="subtask_name_asc">Name A-Z</option>
+                                                                    <option value="subtask_name_desc">Name Z-A</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Clear Filters Button */}
+                                                        <div className="mt-3">
+                                                            <button
+                                                                onClick={() => setSubtaskFilters(prev => ({
+                                                                    ...prev,
+                                                                    [row.original.task_id]: {
+                                                                        status: '',
+                                                                        assignee: '',
+                                                                        search: '',
+                                                                        sort_by: 'created_at',
+                                                                        order: 'desc',
+                                                                    }
+                                                                }))}
+                                                                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded transition text-sm"
+                                                            >
+                                                                Clear Filters
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
                                                     {/* Subtasks */}
-                                                    {subtasksData[row.original.task_id]?.length > 0 && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center">
-                                                                <ListTodo className="w-4 h-4 mr-2" />
-                                                                Subtasks ({subtasksData[row.original.task_id].length})
-                                                            </h4>
-                                                            <div className="space-y-3 ml-4">
-                                                                {subtasksData[row.original.task_id].map((subtask) => (
+                                                    {(() => {
+                                                        const filteredSubtasks = getFilteredSubtasks(subtasksData[row.original.task_id], row.original.task_id);
+                                                        return filteredSubtasks?.length > 0 && (
+                                                            <div>
+                                                                <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center">
+                                                                    <ListTodo className="w-4 h-4 mr-2" />
+                                                                    Subtasks ({filteredSubtasks.length}{subtasksData[row.original.task_id]?.length !== filteredSubtasks.length ? ` of ${subtasksData[row.original.task_id].length}` : ''})
+                                                                </h4>
+                                                                <div className="space-y-3 ml-4">
+                                                                    {filteredSubtasks.map((subtask) => (
                                                                     <div key={subtask.subtask_id || subtask.id} className="border border-gray-600 rounded-lg p-4 bg-gray-700 hover:bg-gray-650 transition">
                                                                         <div className="flex items-start justify-between mb-3">
                                                                             <div className="flex items-center space-x-3 flex-1">
@@ -919,10 +1121,11 @@ const TaskTable = ({ filters }) => {
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                ))}
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
+                                                        );
+                                                    })()}
 
                                                     {/* Task Comments */}
                                                     {comments[row.original.task_id]?.length > 0 && (
