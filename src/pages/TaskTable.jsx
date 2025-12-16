@@ -657,7 +657,7 @@ const TaskTable = ({ filters }) => {
     };
 
     return (
-        <div className=" p-4 h-fit bg-gray-900 text-gray-200">
+        <div className=" p-2 h-fit bg-gray-900 text-gray-200">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-indigo-400">My Tasks</h2>
                 <div className='flex gap-3'>
@@ -717,11 +717,11 @@ const TaskTable = ({ filters }) => {
                     <p className="text-gray-400">You don't have any tasks yet. Create your first task to get started!</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto shadow-2xl rounded-lg border border-gray-700">
+                <div className="overflow-x-auto ">
                     <table className="min-w-full divide-y divide-gray-700">
                         <thead className="bg-gray-800">
                             {table.getHeaderGroups().map(headerGroup => (
-                                <tr key={headerGroup.id}>
+                                <tr key={headerGroup.id} className='m-4'>
                                     {headerGroup.headers.map(header => (
                                         <th
                                             key={header.id}
@@ -752,7 +752,7 @@ const TaskTable = ({ filters }) => {
                                 </tr>
                             ))}
                         </thead>
-                        <tbody className="bg-gray-800 divide-y divide-gray-700">
+                        <tbody className="bg-gray-800 divide-y divide-gray-700 m-4 ">
                             {table.getRowModel().rows.map(row => (
                                 <React.Fragment key={row.id}>
                                     <tr className="hover:bg-gray-700 transition duration-150">
@@ -797,7 +797,7 @@ const TaskTable = ({ filters }) => {
 
                                     {/* Expanded Content */}
                                     {expandedRows[row.original.task_id] && (
-                                        <tr>
+                                        <tr className='m-4'>
                                             <td colSpan={columns.length} className="px-12 py-4 bg-gray-750 max-h-[400px] overflow-y-auto">
                                                 <div className="space-y-4 max-h-[500px] overflow-y-scroll">
                                                     {/* Subtask Filters */}
